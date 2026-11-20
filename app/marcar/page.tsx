@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { hojeEmLisboa } from "@/lib/formatar";
+import { formatarHora, hojeEmLisboa } from "@/lib/formatar";
 import { IconeSeta } from "@/components/icones";
 import { EsqueletoMarcacao } from "@/components/marcar/EsqueletoMarcacao";
 import { PainelResumo } from "@/components/marcar/PainelResumo";
@@ -72,7 +72,7 @@ async function ListaBarbeiros() {
               href={`/marcar/servico?barbeiro=${b.id}`}
               inicial={b.nome.charAt(0)}
               titulo={b.nome}
-              subtitulo={aberto ? `Hoje · ${h.abre.slice(0, 5)} – ${h.fecha.slice(0, 5)}` : "Hoje não está"}
+              subtitulo={aberto ? `Hoje · ${formatarHora(h.abre)} – ${formatarHora(h.fecha)}` : "Hoje não está"}
               disponivel={aberto}
               atraso={100 + i * 70}
             />

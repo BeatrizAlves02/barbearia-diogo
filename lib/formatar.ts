@@ -20,6 +20,12 @@ export function formatarDuracao(minutos: number) {
   return m ? `${h} h ${m} min` : `${h} h`;
 }
 
+/** "07:00:00" → "07:00" · "24:00:00" (meia-noite do fim do dia) → "00:00" */
+export function formatarHora(hora: string) {
+  const hhmm = hora.slice(0, 5);
+  return hhmm === "24:00" ? "00:00" : hhmm;
+}
+
 /** Data de hoje em Lisboa, no formato da base de dados: "2026-11-20" */
 export function hojeEmLisboa() {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Lisbon" }).format(new Date());
