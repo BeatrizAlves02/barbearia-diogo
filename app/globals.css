@@ -24,6 +24,8 @@
   --animate-revelar: revelar 1.2s cubic-bezier(0.22, 1, 0.36, 1) backwards;
   --animate-descer: descer 0.6s cubic-bezier(0.22, 1, 0.36, 1) backwards;
   --animate-desliza: desliza 35s linear infinite;
+  --animate-aparecer: aparecer 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.15s backwards;
+  --animate-desenhar: desenhar 0.5s cubic-bezier(0.65, 0, 0.35, 1) 0.5s backwards;
 
   /* sobe e aparece */
   @keyframes entrar {
@@ -48,6 +50,14 @@
   /* menu que desce do topo */
   @keyframes descer {
     from { opacity: 0; transform: translateY(-12px); }
+  }
+  /* círculo que aparece com um pequeno salto */
+  @keyframes aparecer {
+    from { opacity: 0; transform: scale(0.6); }
+  }
+  /* visto ✓ que se desenha sozinho (usa pathLength=1 no SVG) */
+  @keyframes desenhar {
+    from { stroke-dashoffset: 1; }
   }
   /* faixa de texto a correr (marquee) */
   @keyframes desliza {
