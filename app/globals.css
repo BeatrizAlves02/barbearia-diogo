@@ -15,6 +15,69 @@
 
   --font-sans: var(--font-archivo), system-ui, sans-serif;
   --font-mao: var(--font-caveat), cursive;
+
+  /* ---------- Animações ---------- */
+  --animate-entrar: entrar 0.5s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  --animate-encher: encher 0.6s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  --animate-subir: subir 0.8s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  --animate-escrever: escrever 1s cubic-bezier(0.65, 0, 0.35, 1) backwards;
+  --animate-revelar: revelar 1.2s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  --animate-descer: descer 0.6s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  --animate-desliza: desliza 35s linear infinite;
+
+  /* sobe e aparece */
+  @keyframes entrar {
+    from { opacity: 0; transform: translateY(12px); }
+  }
+  /* barra que se enche da esquerda para a direita */
+  @keyframes encher {
+    from { transform: scaleX(0); }
+  }
+  /* linha de título que sobe "de dentro" de uma máscara */
+  @keyframes subir {
+    from { transform: translateY(110%); }
+  }
+  /* texto manuscrito que se "escreve" da esquerda para a direita */
+  @keyframes escrever {
+    from { clip-path: inset(0 100% 0 0); }
+  }
+  /* foto que aparece com um ligeiro zoom */
+  @keyframes revelar {
+    from { opacity: 0; transform: scale(1.06); }
+  }
+  /* menu que desce do topo */
+  @keyframes descer {
+    from { opacity: 0; transform: translateY(-12px); }
+  }
+  /* faixa de texto a correr (marquee) */
+  @keyframes desliza {
+    to { transform: translateX(-50%); }
+  }
+}
+
+/* Link com sublinhado que cresce da esquerda ao passar o rato */
+@utility link-sublinhado {
+  background-image: linear-gradient(currentColor, currentColor);
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 0% 1px;
+  padding-bottom: 3px;
+  transition: background-size 0.45s cubic-bezier(0.22, 1, 0.36, 1), color 0.2s;
+  &:hover,
+  &:focus-visible {
+    background-size: 100% 1px;
+  }
+}
+
+/* Aparece quando entra no ecrã ao fazer scroll (Chrome, Edge, Safari recentes) */
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .ao-scroll {
+      animation: entrar linear both;
+      animation-timeline: view();
+      animation-range: entry 0% cover 30%;
+    }
+  }
 }
 
 body {
