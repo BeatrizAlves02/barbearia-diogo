@@ -5,9 +5,9 @@ import { BotaoPrimario } from "@/components/BotaoPrimario";
 import { CabecalhoDesktop } from "@/components/CabecalhoDesktop";
 import { Marca } from "@/components/Marca";
 import { NavInferior } from "@/components/NavInferior";
-import { IconeExterno, IconeSeta, IconeUtilizador } from "@/components/icones";
+import { TrabalhosRecentes } from "@/components/TrabalhosRecentes";
+import { IconeSeta, IconeUtilizador } from "@/components/icones";
 
-const INSTAGRAM = "https://www.instagram.com/diogo.pimenta.barber/";
 const LINHAS_TITULO = ["O teu", "próximo", "corte."];
 const FAIXA = ["CORTE", "BARBA", "CORTE + BARBA", "DIOGO PIMENTA", "EST. 2020"];
 
@@ -118,34 +118,7 @@ export default function Inicio() {
       </div>
 
       {/* ---------- Trabalhos recentes ---------- */}
-      <section className="flex flex-col gap-2.5 px-5 pt-8 lg:gap-5 lg:px-0 lg:pt-16">
-        <div className="ao-scroll flex items-center justify-between">
-          <h2 className="text-[11px] font-bold tracking-[0.24em]">TRABALHOS RECENTES</h2>
-          <a
-            href={INSTAGRAM}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group link-sublinhado flex items-center gap-1 text-[13px] text-texto-2 hover:text-texto"
-          >
-            Ver Instagram
-            <IconeExterno className="size-3.5 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
-          </a>
-        </div>
-        <div className="grid grid-cols-3 gap-1.5 lg:gap-4">
-          {[1, 2, 3].map((n) => (
-            <a
-              key={n}
-              href={INSTAGRAM}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={`Trabalho recente ${n} no Instagram`}
-              className="ao-scroll group block overflow-hidden lg:rounded"
-            >
-              <div className="aspect-square bg-superficie-2 transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-105" />
-            </a>
-          ))}
-        </div>
-      </section>
+      <TrabalhosRecentes />
 
       <NavInferior ativo="inicio" />
     </main>
