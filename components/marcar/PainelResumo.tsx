@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { Marca } from "@/components/Marca";
 
 export type LinhaResumo = {
   rotulo: string;
@@ -14,20 +14,6 @@ type Props = {
   acao: React.ReactNode;
 };
 
-function CartaoBarbearia() {
-  return (
-    <div className="flex items-center gap-4">
-      <Image src="/logo.svg" alt="" width={44} height={51} className="shrink-0" />
-      <div className="flex min-w-0 flex-col gap-1">
-        <span className="text-sm font-extrabold uppercase tracking-wide font-stretch-125%">
-          Diogo Pimenta Barbershop
-        </span>
-        <span className="text-[13px] text-texto-3">Ter a Sáb · Est. 2020</span>
-      </div>
-    </div>
-  );
-}
-
 /* Cartão de resumo da marcação (coluna da direita no computador) */
 export function PainelResumo({ linhas, total, acao }: Props) {
   return (
@@ -35,7 +21,10 @@ export function PainelResumo({ linhas, total, acao }: Props) {
       style={{ animationDelay: "150ms" }}
       className="flex flex-col gap-6 rounded-lg border border-borda bg-superficie p-6 motion-safe:animate-entrar"
     >
-      <CartaoBarbearia />
+      {/* Marca centrada, igual à do topo do site */}
+      <div className="flex justify-center py-2">
+        <Marca />
+      </div>
 
       <dl className="flex flex-col divide-y divide-divisor border-y border-divisor">
         {linhas.map((l) => (
