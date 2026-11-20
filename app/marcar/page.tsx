@@ -2,8 +2,10 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { hojeEmLisboa } from "@/lib/formatar";
-import { TopoPasso } from "@/components/TopoPasso";
 import { IconeSeta } from "@/components/icones";
+import { EsqueletoMarcacao } from "@/components/marcar/EsqueletoMarcacao";
+import { PainelResumo } from "@/components/marcar/PainelResumo";
+import { BotaoContinuar } from "@/components/marcar/BotaoContinuar";
 
 type CartaoProps = {
   href: string;
@@ -19,13 +21,13 @@ function CartaoBarbeiro({ href, inicial, titulo, subtitulo, disponivel = true, a
     <Link
       href={href}
       style={{ animationDelay: `${atraso}ms` }}
-      className="group flex min-h-19 items-center gap-4 rounded border border-borda px-4 py-3 transition-[border-color,background-color,transform] duration-200 hover:border-texto hover:bg-superficie-2 active:scale-[0.98] motion-safe:animate-entrar"
+      className="group flex min-h-19 items-center gap-4 rounded border border-borda px-4 py-3 transition-[border-color,background-color,transform] duration-200 hover:border-texto hover:bg-superficie-2 active:scale-[0.98] motion-safe:animate-entrar lg:min-h-24 lg:px-6"
     >
-      <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-superficie-2 text-lg font-extrabold font-stretch-125% transition-colors duration-200 group-hover:bg-texto group-hover:text-tinta">
+      <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-superficie-2 text-lg font-extrabold font-stretch-125% transition-colors duration-200 group-hover:bg-texto group-hover:text-tinta lg:size-14">
         {inicial}
       </span>
       <span className="flex flex-1 flex-col gap-1">
-        <span className="text-base font-bold uppercase tracking-wide">{titulo}</span>
+        <span className="text-base font-bold uppercase tracking-wide lg:text-lg">{titulo}</span>
         {subtitulo && (
           <span className="flex items-center gap-2 text-[13px] text-texto-3">
             <span
@@ -60,7 +62,7 @@ async function ListaBarbeiros() {
   );
 
   return (
-    <ul className="flex flex-col gap-2.5">
+    <ul className="flex flex-col gap-2.5 lg:gap-3">
       {lista.map((b, i) => {
         const h = horarios[i].data?.[0];
         const aberto = Boolean(h?.aberto && h.abre && h.fecha);
@@ -93,9 +95,9 @@ async function ListaBarbeiros() {
 // Cartões cinzentos a pulsar enquanto os dados chegam
 function ListaACarregar() {
   return (
-    <ul className="flex flex-col gap-2.5" aria-hidden="true">
+    <ul className="flex flex-col gap-2.5 lg:gap-3" aria-hidden="true">
       {[0, 1, 2].map((i) => (
-        <li key={i} className="h-19 rounded bg-superficie motion-safe:animate-pulse" />
+        <li key={i} className="h-19 rounded bg-superficie motion-safe:animate-pulse lg:h-24" />
       ))}
     </ul>
   );
@@ -103,19 +105,25 @@ function ListaACarregar() {
 
 export default function ComQuem() {
   return (
-    <main className="mx-auto min-h-dvh max-w-md pb-10">
-      <TopoPasso passo={1} voltar="/" />
-
-      <div className="flex flex-col gap-6 px-5 pt-6">
-        <div className="flex flex-col gap-1.5 motion-safe:animate-entrar">
-          <h1 className="text-[30px] font-extrabold uppercase leading-none font-stretch-125%">Com quem?</h1>
-          <p className="text-sm text-texto-3">Escolhe o teu barbeiro.</p>
-        </div>
-
-        <Suspense fallback={<ListaACarregar />}>
-          <ListaBarbeiros />
-        </Suspense>
-      </div>
-    </main>
+    <EsqueletoMarcacao
+      passo={1}
+      voltar="/"
+      titulo="Com quem?"
+      subtitulo="Escolhe o teu barbeiro."
+      lateral={
+        <PainelResumo
+          linhas={[
+            { rotulo: "Barbeiro", valor: "Por escolher", vazio: true },
+            { rotulo: "Serviço", valor: "Por escolher", vazio: true },
+            { rotulo: "Data e hora", valor: "Por escolher", vazio: true },
+          ]}
+          acao={<BotaoContinuar href={null}>ESCOLHE UM BARBEIRO</BotaoContinuar>}
+        />
+      }
+    >
+      <Suspense fallback={<ListaACarregar />}>
+        <ListaBarbeiros />
+      </Suspense>
+    </EsqueletoMarcacao>
   );
 }

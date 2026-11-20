@@ -4,6 +4,10 @@ import { useState } from "react";
 import Link from "next/link";
 import { IconeSeta, IconeVisto } from "@/components/icones";
 import { formatarDuracao, formatarPreco } from "@/lib/formatar";
+import { EsqueletoMarcacao } from "./EsqueletoMarcacao";
+import { PainelResumo } from "./PainelResumo";
+import { BotaoContinuar } from "./BotaoContinuar";
+import { BarbeiroEscolhido } from "./BarbeiroEscolhido";
 
 export type Servico = {
   id: string;
@@ -12,9 +16,9 @@ export type Servico = {
   preco: number | null;
 };
 
-type Props = { barbeiro: string; servicos: Servico[] };
+type Props = { barbeiro: string; nomeBarbeiro: string; servicos: Servico[] };
 
-export function EscolherServico({ barbeiro, servicos }: Props) {
+export function EscolherServico({ barbeiro, nomeBarbeiro, servicos }: Props) {
   const [escolhido, setEscolhido] = useState<string | null>(null);
   const servico = servicos.find((s) => s.id === escolhido);
 
@@ -23,9 +27,30 @@ export function EscolherServico({ barbeiro, servicos }: Props) {
     : null;
 
   return (
-    <>
+    <EsqueletoMarcacao
+      passo={2}
+      voltar="/marcar"
+      titulo="O que queres marcar?"
+      subtitulo="Escolhe o serviço."
+      comBarraMovel
+      lateral={
+        <PainelResumo
+          linhas={[
+            { rotulo: "Barbeiro", valor: nomeBarbeiro },
+            servico
+              ? { rotulo: "Serviço", valor: servico.nome, detalhe: formatarDuracao(servico.duracao_min) }
+              : { rotulo: "Serviço", valor: "Por escolher", vazio: true },
+            { rotulo: "Data e hora", valor: "Escolhes a seguir", vazio: true },
+          ]}
+          total={servico ? formatarPreco(servico.preco) : undefined}
+          acao={<BotaoContinuar href={proximo}>CONTINUAR</BotaoContinuar>}
+        />
+      }
+    >
+      <BarbeiroEscolhido nome={nomeBarbeiro} />
+
       {/* ---------- Lista de serviços ---------- */}
-      <fieldset className="flex flex-col gap-2.5">
+      <fieldset className="flex flex-col gap-2.5 lg:gap-3">
         <legend className="sr-only">Serviços</legend>
 
         {servicos.map((s, i) => {
@@ -34,7 +59,7 @@ export function EscolherServico({ barbeiro, servicos }: Props) {
             <label
               key={s.id}
               style={{ animationDelay: `${150 + i * 70}ms` }}
-              className={`flex min-h-19 cursor-pointer items-center gap-4 rounded border px-4 py-3.5 transition-[border-color,background-color,transform] duration-200 active:scale-[0.98] has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-texto motion-safe:animate-entrar ${
+              className={`flex min-h-19 cursor-pointer items-center gap-4 rounded border px-4 py-3.5 transition-[border-color,background-color,transform] duration-200 active:scale-[0.98] has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-texto motion-safe:animate-entrar lg:min-h-24 lg:px-6 ${
                 sel ? "border-texto bg-superficie-2" : "border-borda hover:border-borda-forte hover:bg-superficie"
               }`}
             >
@@ -62,20 +87,20 @@ export function EscolherServico({ barbeiro, servicos }: Props) {
               </span>
 
               <span className="flex flex-1 flex-col gap-0.5">
-                <span className="text-base font-bold uppercase tracking-wide">{s.nome}</span>
+                <span className="text-base font-bold uppercase tracking-wide lg:text-lg">{s.nome}</span>
                 <span className="text-[13px] text-texto-3">{formatarDuracao(s.duracao_min)}</span>
               </span>
 
-              <span className="text-lg font-extrabold font-stretch-125%">{formatarPreco(s.preco)}</span>
+              <span className="text-lg font-extrabold font-stretch-125% lg:text-xl">{formatarPreco(s.preco)}</span>
             </label>
           );
         })}
       </fieldset>
 
-      {/* ---------- Resumo fixo em baixo ---------- */}
+      {/* ---------- Resumo fixo em baixo (só telemóvel) ---------- */}
       <div
         style={{ animationDelay: "350ms" }}
-        className="fixed inset-x-0 bottom-0 mx-auto max-w-md px-5 pb-5 motion-safe:animate-entrar"
+        className="fixed inset-x-0 bottom-0 mx-auto max-w-md px-5 pb-5 motion-safe:animate-entrar lg:hidden"
       >
         <div
           aria-live="polite"
@@ -85,9 +110,7 @@ export function EscolherServico({ barbeiro, servicos }: Props) {
         >
           {/* a "key" faz o texto animar de novo sempre que muda de serviço */}
           <div key={servico?.id ?? "vazio"} className="flex flex-col gap-0.5 motion-safe:animate-entrar">
-            <span className="text-base font-bold">
-              {servico ? servico.nome : "Nenhum serviço escolhido"}
-            </span>
+            <span className="text-base font-bold">{servico ? servico.nome : "Nenhum serviço escolhido"}</span>
             <span className={`text-sm ${servico ? "text-borda-forte" : "text-texto-3"}`}>
               {servico
                 ? `${formatarDuracao(servico.duracao_min)} · ${formatarPreco(servico.preco)}`
@@ -114,6 +137,6 @@ export function EscolherServico({ barbeiro, servicos }: Props) {
           )}
         </div>
       </div>
-    </>
+    </EsqueletoMarcacao>
   );
 }

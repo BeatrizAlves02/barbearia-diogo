@@ -8,7 +8,7 @@ type Props = { passo: 1 | 2 | 3 | 4; voltar: string };
 
 export function TopoPasso({ passo, voltar }: Props) {
   return (
-    <header className="flex flex-col gap-4 px-5 pt-4">
+    <header className="flex flex-col gap-4 px-5 pt-4 lg:gap-6 lg:px-0 lg:pt-8">
       <div className="flex items-center justify-between">
         <Link
           href={voltar}
@@ -18,9 +18,9 @@ export function TopoPasso({ passo, voltar }: Props) {
           <IconeVoltar />
         </Link>
         <span className="text-[11px] tracking-[0.24em] text-texto-3">PASSO {passo} DE 4</span>
-        <div className="flex size-11 items-center justify-center">
-          <Image src="/logo.svg" alt="Diogo Pimenta" width={26} height={30} />
-        </div>
+        <Link href="/" aria-label="Diogo Pimenta — início" className="flex size-11 items-center justify-center transition-opacity hover:opacity-70">
+          <Image src="/logo.svg" alt="" width={26} height={30} />
+        </Link>
       </div>
 
       <ol className="grid grid-cols-4 gap-1.5" aria-label="Passos da marcação">
