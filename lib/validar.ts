@@ -3,7 +3,7 @@ import { getCountries, getCountryCallingCode, parsePhoneNumberFromString, type C
 
 export const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-export type Pais = { codigo: string; nome: string; indicativo: string };
+export type Pais = { codigo: string; nome: string; indicativo: string; comum?: boolean };
 
 /** Países mais prováveis ficam no topo da lista */
 const PRIMEIROS = ["PT", "ES", "FR", "BR", "GB", "CH", "LU", "DE"];
@@ -11,12 +11,14 @@ const PRIMEIROS = ["PT", "ES", "FR", "BR", "GB", "CH", "LU", "DE"];
 /** Lista de países com o nome em português e o indicativo (+351, +34…) */
 export function listaDePaises(): Pais[] {
   const nomes = new Intl.DisplayNames(["pt-PT"], { type: "region" });
-  const todos = getCountries().map((c) => ({
+  const todos: Pais[] = getCountries().map((c) => ({
     codigo: c,
     nome: nomes.of(c) ?? c,
     indicativo: `+${getCountryCallingCode(c)}`,
   }));
-  const topo = PRIMEIROS.map((c) => todos.find((p) => p.codigo === c)!).filter(Boolean);
+  const topo = PRIMEIROS.map((c) => todos.find((p) => p.codigo === c))
+    .filter((p): p is Pais => Boolean(p))
+    .map((p) => ({ ...p, comum: true }));
   const resto = todos.filter((p) => !PRIMEIROS.includes(p.codigo)).sort((a, b) => a.nome.localeCompare(b.nome, "pt"));
   return [...topo, ...resto];
 }
@@ -37,8 +39,6 @@ export function validarTelemovel(numero: string, pais: string): string | null {
 }
 
 /** Mensagem de erro para um número inválido */
-export function erroTelemovel(pais: string) {
-  return pais === "PT"
-    ? "Número inválido. Os telemóveis portugueses começam por 91, 92, 93 ou 96 e têm 9 dígitos."
-    : "Este número de telemóvel não é válido para o país escolhido.";
+export function erroTelemovel(_pais?: string) {
+  return "Número inválido.";
 }

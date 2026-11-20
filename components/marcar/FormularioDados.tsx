@@ -12,6 +12,7 @@ import type { Servico } from "./tipos";
 import { EsqueletoMarcacao } from "./EsqueletoMarcacao";
 import { PainelResumo } from "./PainelResumo";
 import { EscolhaFeita } from "./EscolhaFeita";
+import { SeletorPais } from "./SeletorPais";
 
 type Props = {
   barbeiro: string; // id do barbeiro (já atribuído)
@@ -87,15 +88,14 @@ export function FormularioDados({ barbeiro, nomeBarbeiro, servico, inicio, paise
   const verificar = (numero: string, codigo: string) =>
     numero.trim() ? (validarTelemovel(numero, codigo) ? null : erroTelemovel(codigo)) : undefined;
   const erroTelefone = erroLocal !== undefined ? erroLocal : erros.telefone;
-  const paisAtual = paises.find((p) => p.codigo === pais) ?? paises[0];
-
+  
   const diaTexto = formatarDiaCurto(diaEmLisboa(inicio));
   const horaTexto = `${horaEmLisboa(inicio)} – ${horaDeFim(inicio, servico.duracao_min)}`;
   const voltarHorario = `/marcar/horario?barbeiro=${barbeiro}&servico=${servico.id}`;
   const textoBotao = aEnviar ? "A MARCAR…" : "CONFIRMAR MARCAÇÃO";
 
   const estiloInput = (invalido?: boolean) =>
-    `h-13 w-full rounded border bg-superficie px-4 text-base text-texto outline-none transition-colors placeholder:text-desativado focus:border-texto ${
+    `h-13 w-full rounded border bg-superficie px-4 text-base text-texto outline-none transition-colors placeholder:text-desativado focus:border-texto autofill:shadow-[inset_0_0_0_100px_var(--color-superficie)] autofill:[-webkit-text-fill-color:var(--color-texto)] autofill:[caret-color:var(--color-texto)] ${
       invalido ? "border-red-400" : "border-borda"
     }`;
 
@@ -188,34 +188,18 @@ export function FormularioDados({ barbeiro, nomeBarbeiro, servico, inicio, paise
             TELEMÓVEL
           </label>
           <div
-            className={`flex h-13 items-center rounded border bg-superficie transition-colors focus-within:border-texto ${
+            className={`relative flex h-13 items-center rounded border bg-superficie transition-colors focus-within:border-texto ${
               erroTelefone ? "border-red-400" : "border-borda"
             }`}
           >
-            {/* Escolha do país: mostra "PT +351", a lista verdadeira está por cima (invisível) */}
-            <div className="relative flex h-full shrink-0 items-center gap-1.5 border-r border-borda pl-4 pr-3 text-base text-texto-2 has-focus-visible:text-texto">
-              <span className="text-xs font-bold tracking-wider text-texto-3">{paisAtual.codigo}</span>
-              <span>{paisAtual.indicativo}</span>
-              <svg viewBox="0 0 12 12" className="size-3 text-texto-3" fill="none" stroke="currentColor" strokeWidth={1.6} aria-hidden="true">
-                <path d="M3 4.5l3 3 3-3" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              <select
-                name="pais"
-                value={pais}
-                aria-label="País do número"
-                onChange={(e) => {
-                  setPais(e.target.value);
-                  if (erroLocal !== undefined || erros.telefone) setErroLocal(verificar(telefone, e.target.value) ?? null);
-                }}
-                className="absolute inset-0 cursor-pointer appearance-none bg-superficie text-texto opacity-0"
-              >
-                {paises.map((p) => (
-                  <option key={p.codigo} value={p.codigo}>
-                    {p.nome} ({p.indicativo})
-                  </option>
-                ))}
-              </select>
-            </div>
+            <SeletorPais
+              paises={paises}
+              valor={pais}
+              onMudar={(codigo) => {
+                setPais(codigo);
+                if (erroLocal !== undefined || erros.telefone) setErroLocal(verificar(telefone, codigo) ?? null);
+              }}
+            />
             <input
               id="telefone"
               name="telefone"
@@ -232,7 +216,7 @@ export function FormularioDados({ barbeiro, nomeBarbeiro, servico, inicio, paise
               onBlur={() => setErroLocal(verificar(telefone, pais) ?? (erros.telefone ? null : undefined))}
               aria-invalid={Boolean(erroTelefone) || undefined}
               aria-describedby={erroTelefone ? "erro-telefone" : undefined}
-              className="h-full min-w-0 flex-1 bg-transparent px-4 text-base text-texto outline-none placeholder:text-desativado"
+              className="h-full min-w-0 flex-1 rounded-r bg-transparent px-4 text-base text-texto outline-none placeholder:text-desativado autofill:shadow-[inset_0_0_0_100px_var(--color-superficie)] autofill:[-webkit-text-fill-color:var(--color-texto)] autofill:[caret-color:var(--color-texto)]"
             />
           </div>
           <Erro id="erro-telefone" texto={erroTelefone ?? undefined} />
