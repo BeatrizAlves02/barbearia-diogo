@@ -10,6 +10,11 @@ export const IconeSeta = ({ className = "size-5" }: P) => (
     <path d="M5 12h14" /><path d="M13 6l6 6-6 6" />
   </svg>
 );
+export const IconeVisto = ({ className = "size-4" }: P) => (
+  <svg viewBox="0 0 24 24" className={className} {...base} strokeWidth={3}>
+    <path d="M5 12.5l4.5 4.5L19 7.5" />
+  </svg>
+);
 export const IconeExterno = ({ className = "size-4" }: P) => (
   <svg viewBox="0 0 24 24" className={className} {...base} strokeWidth={1.8}>
     <path d="M7 17L17 7" /><path d="M8 7h9v9" />

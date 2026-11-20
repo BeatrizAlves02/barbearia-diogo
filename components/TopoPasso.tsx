@@ -2,6 +2,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { IconeVoltar } from "./icones";
 
+const ETAPAS = ["Barbeiro", "Serviço", "Hora", "Dados"];
+
 type Props = { passo: 1 | 2 | 3 | 4; voltar: string };
 
 export function TopoPasso({ passo, voltar }: Props) {
@@ -11,7 +13,7 @@ export function TopoPasso({ passo, voltar }: Props) {
         <Link
           href={voltar}
           aria-label="Voltar"
-          className="flex size-11 items-center justify-center rounded-full border border-borda transition-colors hover:border-texto"
+          className="flex size-11 items-center justify-center rounded-full border border-borda transition-[border-color,transform] hover:border-texto active:scale-95"
         >
           <IconeVoltar />
         </Link>
@@ -20,16 +22,28 @@ export function TopoPasso({ passo, voltar }: Props) {
           <Image src="/logo.svg" alt="Diogo Pimenta" width={26} height={30} />
         </div>
       </div>
-      <div className="grid grid-cols-4 gap-1.5" aria-hidden="true">
-        {[1, 2, 3, 4].map((n) => (
-          <div
-            key={n}
-            className={`h-[3px] origin-left ${
-              n < passo ? "bg-texto" : n === passo ? "bg-texto motion-safe:animate-encher" : "bg-borda"
-            }`}
-          />
-        ))}
-      </div>
+
+      <ol className="grid grid-cols-4 gap-1.5" aria-label="Passos da marcação">
+        {ETAPAS.map((nome, i) => {
+          const n = i + 1;
+          return (
+            <li key={nome} aria-current={n === passo ? "step" : undefined} className="flex flex-col gap-2">
+              <div
+                className={`h-[3px] origin-left ${
+                  n < passo ? "bg-texto" : n === passo ? "bg-texto motion-safe:animate-encher" : "bg-borda"
+                }`}
+              />
+              <span
+                className={`text-[10px] uppercase tracking-[0.14em] ${
+                  n <= passo ? "font-bold text-texto" : "text-texto-3"
+                }`}
+              >
+                {nome}
+              </span>
+            </li>
+          );
+        })}
+      </ol>
     </header>
   );
 }

@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { hojeEmLisboa } from "@/lib/formatar";
 import { TopoPasso } from "@/components/TopoPasso";
 import { IconeSeta } from "@/components/icones";
 
@@ -9,22 +10,31 @@ type CartaoProps = {
   inicial: string;
   titulo: string;
   subtitulo?: string;
+  disponivel?: boolean;
   atraso: number; // em milissegundos — faz os cartões entrarem um a um
 };
 
-function CartaoBarbeiro({ href, inicial, titulo, subtitulo, atraso }: CartaoProps) {
+function CartaoBarbeiro({ href, inicial, titulo, subtitulo, disponivel = true, atraso }: CartaoProps) {
   return (
     <Link
       href={href}
       style={{ animationDelay: `${atraso}ms` }}
-      className="group flex min-h-19 items-center gap-4 rounded border border-borda px-4 transition-[border-color,background-color,transform] duration-200 hover:border-texto hover:bg-superficie-2 active:scale-[0.98] motion-safe:animate-entrar"
+      className="group flex min-h-19 items-center gap-4 rounded border border-borda px-4 py-3 transition-[border-color,background-color,transform] duration-200 hover:border-texto hover:bg-superficie-2 active:scale-[0.98] motion-safe:animate-entrar"
     >
       <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-superficie-2 text-lg font-extrabold font-stretch-125% transition-colors duration-200 group-hover:bg-texto group-hover:text-tinta">
         {inicial}
       </span>
-      <span className="flex flex-1 flex-col gap-0.5">
+      <span className="flex flex-1 flex-col gap-1">
         <span className="text-base font-bold uppercase tracking-wide">{titulo}</span>
-        {subtitulo && <span className="text-[13px] text-texto-3">{subtitulo}</span>}
+        {subtitulo && (
+          <span className="flex items-center gap-2 text-[13px] text-texto-3">
+            <span
+              aria-hidden="true"
+              className={`size-1.5 rounded-full ${disponivel ? "bg-texto" : "bg-desativado"}`}
+            />
+            {subtitulo}
+          </span>
+        )}
       </span>
       <IconeSeta className="size-5 text-texto-3 transition-[color,transform] duration-200 group-hover:translate-x-1 group-hover:text-texto" />
     </Link>
@@ -43,18 +53,30 @@ async function ListaBarbeiros() {
 
   const lista = barbeiros ?? [];
 
+  // Horário de hoje de cada barbeiro (habitual ou o que ele mudou para hoje)
+  const hoje = hojeEmLisboa();
+  const horarios = await Promise.all(
+    lista.map((b) => supabase.rpc("horario_do_dia", { p_barbeiro: b.id, p_data: hoje }))
+  );
+
   return (
     <ul className="flex flex-col gap-2.5">
-      {lista.map((b, i) => (
-        <li key={b.id}>
-          <CartaoBarbeiro
-            href={`/marcar/servico?barbeiro=${b.id}`}
-            inicial={b.nome.charAt(0)}
-            titulo={b.nome}
-            atraso={100 + i * 70}
-          />
-        </li>
-      ))}
+      {lista.map((b, i) => {
+        const h = horarios[i].data?.[0];
+        const aberto = Boolean(h?.aberto && h.abre && h.fecha);
+        return (
+          <li key={b.id}>
+            <CartaoBarbeiro
+              href={`/marcar/servico?barbeiro=${b.id}`}
+              inicial={b.nome.charAt(0)}
+              titulo={b.nome}
+              subtitulo={aberto ? `Hoje · ${h.abre.slice(0, 5)} – ${h.fecha.slice(0, 5)}` : "Hoje não está"}
+              disponivel={aberto}
+              atraso={100 + i * 70}
+            />
+          </li>
+        );
+      })}
       <li>
         <CartaoBarbeiro
           href="/marcar/servico?barbeiro=qualquer"
