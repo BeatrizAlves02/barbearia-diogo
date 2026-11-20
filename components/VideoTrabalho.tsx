@@ -7,7 +7,7 @@ import { useEffect, useRef } from "react";
  * Só toca quando está visível no ecrã (poupa bateria e dados) e
  * não toca sozinho para quem tem "reduzir movimento" ligado no telemóvel.
  */
-export function VideoTrabalho({ src, className = "" }: { src: string; className?: string }) {
+export function VideoTrabalho({ src, className = "", style }: { src: string; className?: string; style?: React.CSSProperties }) {
   const ref = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
@@ -34,6 +34,7 @@ export function VideoTrabalho({ src, className = "" }: { src: string; className?
       playsInline
       preload="metadata"
       aria-hidden="true"
+      style={style}
       className={className}
     >
       {/* #t=0.1 faz o iPhone mostrar a primeira imagem antes de tocar */}

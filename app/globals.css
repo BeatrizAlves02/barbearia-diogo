@@ -90,6 +90,31 @@
   }
 }
 
+/*
+  Trabalhos recentes: a preto e branco até entrarem no ecrã.
+  Ao descer, ganham cor e aproximam-se ligeiramente; ao subir, fazem o caminho inverso.
+  A animação está ligada ao scroll, por isso anda para trás e para a frente com ele.
+  Em browsers sem suporte, ficam simplesmente a cores.
+*/
+@keyframes cor-ao-scroll {
+  from { filter: grayscale(1) brightness(0.85); scale: 1; }
+  to { filter: grayscale(0) brightness(1); scale: 1.06; }
+}
+@keyframes cor-ao-scroll-sem-zoom {
+  from { filter: grayscale(1); }
+  to { filter: grayscale(0); }
+}
+@supports (animation-timeline: view()) {
+  .cor-ao-scroll {
+    animation: cor-ao-scroll cubic-bezier(0.33, 1, 0.68, 1) both;
+    animation-timeline: view();
+    animation-range: entry 15% cover 50%;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .cor-ao-scroll { animation-name: cor-ao-scroll-sem-zoom; }
+  }
+}
+
 body {
   background: var(--color-bg);
   color: var(--color-texto);

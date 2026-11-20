@@ -17,9 +17,11 @@ const TRABALHOS: Trabalho[] = [
 /* Cada fotografia entra um pouco depois da anterior ao fazer scroll */
 const ENTRADAS = ["entry 0% cover 30%", "entry 10% cover 40%", "entry 20% cover 50%"];
 
-/* A imagem aproxima-se ao passar o rato. No computador está a preto e branco e ganha cor no hover */
-const MEDIA =
-  "object-cover transition-[filter,transform] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-105 group-focus-visible:scale-105 lg:grayscale lg:group-hover:grayscale-0 lg:group-focus-visible:grayscale-0";
+/* Cor + aproximação ligadas ao scroll (ver .cor-ao-scroll no globals.css) */
+const MEDIA = "cor-ao-scroll object-cover";
+
+/* Cada imagem ganha cor um pouco depois da anterior */
+const CORES = ["entry 15% cover 50%", "entry 25% cover 58%", "entry 35% cover 66%"];
 
 export function TrabalhosRecentes() {
   return (
@@ -46,31 +48,19 @@ export function TrabalhosRecentes() {
             rel="noopener noreferrer"
             aria-label={t.tipo === "video" ? "Vídeo de um corte no Instagram" : `${t.alt} — ver no Instagram`}
             style={{ animationRange: ENTRADAS[i] }}
-            className="ao-scroll group relative block aspect-[4/5] overflow-hidden rounded-sm bg-superficie-2 outline-none lg:rounded"
+            className="ao-scroll group relative block aspect-[4/5] overflow-clip rounded-sm bg-superficie-2 outline-none lg:rounded"
           >
             {t.tipo === "foto" ? (
-              <Image src={t.src} alt="" fill sizes="(min-width: 1024px) 300px, 33vw" className={MEDIA} />
+              <Image src={t.src} alt="" fill sizes="(min-width: 1024px) 300px, 33vw" style={{ animationRange: CORES[i] }} className={MEDIA} />
             ) : (
-              <VideoTrabalho src={t.src} className={`absolute inset-0 size-full ${MEDIA}`} />
+              <VideoTrabalho src={t.src} style={{ animationRange: CORES[i] }} className={`absolute inset-0 size-full ${MEDIA}`} />
             )}
 
             {/* Escurecido em baixo, para o texto se ler */}
             <div className="pointer-events-none absolute inset-0 bg-linear-to-t from-black/70 via-black/0 to-black/0 opacity-60 transition-opacity duration-500 group-hover:opacity-100" />
 
-            {/* Selo de vídeo, com um ponto a "piscar" como gravação */}
-            {t.tipo === "video" && (
-              <span className="absolute left-1.5 top-1.5 flex items-center gap-1.5 rounded-full bg-black/60 px-2 py-1 text-[8px] font-bold tracking-[0.2em] backdrop-blur-sm lg:left-3 lg:top-3 lg:px-2.5 lg:text-[10px]">
-                <span className="relative flex size-1.5">
-                  <span className="absolute inset-0 rounded-full bg-texto motion-safe:animate-ping" />
-                  <span className="relative size-1.5 rounded-full bg-texto" />
-                </span>
-                VÍDEO
-              </span>
-            )}
-
-            {/* Número + "Ver no Instagram" que sobe ao passar o rato (só no computador) */}
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 hidden items-end justify-between p-4 lg:flex">
-              <span className="text-xs font-bold tracking-[0.2em] font-stretch-125%">0{i + 1}</span>
+            {/* "Ver no Instagram" que sobe ao passar o rato (só no computador) */}
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 hidden items-end justify-end p-4 lg:flex">
               <span className="flex translate-y-3 items-center gap-1.5 text-xs font-bold tracking-[0.14em] opacity-0 transition-[opacity,transform] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:translate-y-0 group-hover:opacity-100 group-focus-visible:translate-y-0 group-focus-visible:opacity-100">
                 VER NO INSTAGRAM
                 <IconeExterno className="size-3.5" />
