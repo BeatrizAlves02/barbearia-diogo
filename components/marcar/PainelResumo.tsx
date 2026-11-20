@@ -17,8 +17,8 @@ type Props = {
 function CartaoBarbearia() {
   return (
     <div className="flex items-center gap-4">
-      <div className="relative size-16 shrink-0 overflow-hidden rounded">
-        <Image src="/destaque.jpg" alt="" fill sizes="64px" className="object-cover object-[center_20%]" />
+      <div className="flex size-16 shrink-0 items-center justify-center rounded border border-borda bg-bg">
+        <Image src="/logo.svg" alt="" width={30} height={35} />
       </div>
       <div className="flex min-w-0 flex-col gap-0.5">
         <span className="text-sm font-extrabold uppercase tracking-wide font-stretch-125%">
