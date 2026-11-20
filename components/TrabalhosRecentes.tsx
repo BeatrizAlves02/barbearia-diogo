@@ -5,23 +5,21 @@ import { VideoTrabalho } from "@/components/VideoTrabalho";
 
 const INSTAGRAM = "https://www.instagram.com/diogo.pimenta.barber/";
 
-type Trabalho =
-  | { tipo: "foto"; src: string; alt: string; link: string }
-  | { tipo: "video"; src: string; link: string };
+type Trabalho = { tipo: "foto"; src: string; alt: string } | { tipo: "video"; src: string };
 
 const TRABALHOS: Trabalho[] = [
-  { tipo: "foto", src: "/trabalho-1.jpg", alt: "Diogo a fazer um degradê com risco", link: INSTAGRAM },
-  { tipo: "video", src: "/trabalho-video.mp4", link: "https://www.instagram.com/p/DdUA3SssKKv/" },
-  { tipo: "foto", src: "/trabalho-2.jpg", alt: "Diogo a acabar um corte em cabelo encaracolado", link: INSTAGRAM },
+  { tipo: "foto", src: "/trabalho-1.jpg", alt: "Diogo a fazer um degradê com risco" },
+  { tipo: "video", src: "/trabalho-video.mp4" },
+  { tipo: "foto", src: "/trabalho-2.jpg", alt: "Diogo a acabar um corte em cabelo encaracolado" },
 ];
 
 /*
   Fora do meio do ecrã: preto e branco e um pouco mais escuro.
   No meio do ecrã (data-ativo=true): ganha cor e aproxima-se suavemente.
-  A transição demora ~1s e respeita o atraso de cada cartão.
+  A transição demora ~1s. No computador, as três mudam uma a seguir à outra.
 */
 const MEDIA =
-  "object-cover grayscale brightness-75 transition-[filter,scale] duration-1000 ease-[cubic-bezier(0.22,1,0.36,1)] delay-(--atraso) group-data-[ativo=true]/cartao:grayscale-0 group-data-[ativo=true]/cartao:brightness-100 motion-safe:group-data-[ativo=true]/cartao:scale-105";
+  "object-cover grayscale brightness-75 transition-[filter,scale] duration-1000 ease-[cubic-bezier(0.22,1,0.36,1)] lg:delay-(--atraso) group-data-[ativo=true]/cartao:grayscale-0 group-data-[ativo=true]/cartao:brightness-100 motion-safe:group-data-[ativo=true]/cartao:scale-105";
 
 export function TrabalhosRecentes() {
   return (
@@ -39,16 +37,12 @@ export function TrabalhosRecentes() {
         </a>
       </div>
 
-      <div className="grid grid-cols-3 gap-1.5 lg:gap-4">
+      {/* Telemóvel: uma por baixo da outra · Computador: três lado a lado */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-3 lg:gap-4">
         {TRABALHOS.map((t, i) => (
-          <CartaoTrabalho
-            key={t.src}
-            href={t.link}
-            atraso={i * 150}
-            rotulo={t.tipo === "video" ? "Vídeo de um corte no Instagram" : `${t.alt} — ver no Instagram`}
-          >
+          <CartaoTrabalho key={t.src} atraso={i * 150}>
             {t.tipo === "foto" ? (
-              <Image src={t.src} alt="" fill sizes="(min-width: 1024px) 300px, 33vw" className={MEDIA} />
+              <Image src={t.src} alt={t.alt} fill sizes="(min-width: 640px) 33vw, 100vw" className={MEDIA} />
             ) : (
               <VideoTrabalho src={t.src} className={`absolute inset-0 size-full ${MEDIA}`} />
             )}

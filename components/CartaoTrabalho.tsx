@@ -3,20 +3,18 @@
 import { useEffect, useRef, useState } from "react";
 
 type Props = {
-  href: string;
-  rotulo: string;
-  atraso?: number; // ms — para as três não mudarem exatamente ao mesmo tempo
+  atraso?: number; // ms — no computador, para as três não mudarem exatamente ao mesmo tempo
   children: React.ReactNode;
 };
 
 /**
- * Cartão dos trabalhos recentes.
+ * Cartão dos trabalhos recentes (só para ver, não é um link).
  * Fica "ativo" (a cores e ligeiramente aproximado) só enquanto está na zona
  * central do ecrã. Antes de lá chegar e depois de passar, volta a preto e branco.
  * Funciona nos dois sentidos do scroll.
  */
-export function CartaoTrabalho({ href, rotulo, atraso = 0, children }: Props) {
-  const ref = useRef<HTMLAnchorElement>(null);
+export function CartaoTrabalho({ atraso = 0, children }: Props) {
+  const ref = useRef<HTMLDivElement>(null);
   const [ativo, setAtivo] = useState(false);
 
   useEffect(() => {
@@ -31,17 +29,13 @@ export function CartaoTrabalho({ href, rotulo, atraso = 0, children }: Props) {
   }, []);
 
   return (
-    <a
+    <div
       ref={ref}
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      aria-label={rotulo}
       data-ativo={ativo}
       style={{ "--atraso": `${atraso}ms` } as React.CSSProperties}
-      className="ao-scroll group/cartao relative block aspect-[4/5] overflow-hidden rounded-sm bg-superficie-2 outline-none focus-visible:ring-2 focus-visible:ring-texto lg:rounded"
+      className="ao-scroll group/cartao relative aspect-[4/5] overflow-hidden rounded bg-superficie-2"
     >
       {children}
-    </a>
+    </div>
   );
 }
