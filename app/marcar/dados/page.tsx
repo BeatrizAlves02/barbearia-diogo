@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { diaEmLisboa } from "@/lib/datas";
-import { UUID } from "@/lib/validar";
+import { UUID, listaDePaises } from "@/lib/validar";
 import { FormularioDados } from "@/components/marcar/FormularioDados";
 import { EsqueletoMarcacao } from "@/components/marcar/EsqueletoMarcacao";
 import { PainelResumo } from "@/components/marcar/PainelResumo";
@@ -100,7 +100,15 @@ async function Conteudo({ searchParams }: Props) {
     );
   }
 
-  return <FormularioDados barbeiro={barbeiro} nomeBarbeiro={b.nome} servico={s} inicio={dataInicio.toISOString()} />;
+  return (
+    <FormularioDados
+      barbeiro={barbeiro}
+      nomeBarbeiro={b.nome}
+      servico={s}
+      inicio={dataInicio.toISOString()}
+      paises={listaDePaises()}
+    />
+  );
 }
 
 export default function DadosPagina({ searchParams }: Props) {

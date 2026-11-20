@@ -1,10 +1,11 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import Link from "next/link";
 import { criarMarcacao, type EstadoDados } from "@/app/marcar/dados/actions";
 import { classesBotaoPrimario } from "@/components/BotaoPrimario";
 import { IconeVisto } from "@/components/icones";
+import { erroTelemovel, validarTelemovel, type Pais } from "@/lib/validar";
 import { formatarDuracao, formatarPreco } from "@/lib/formatar";
 import { diaEmLisboa, formatarDiaCurto, horaDeFim, horaEmLisboa } from "@/lib/datas";
 import type { Servico } from "./tipos";
@@ -17,6 +18,7 @@ type Props = {
   nomeBarbeiro: string;
   servico: Servico;
   inicio: string; // instante em ISO
+  paises: Pais[];
 };
 
 const ID_FORM = "form-dados";
@@ -67,10 +69,25 @@ function Caixa({ name, defaultChecked, invalido, descricao, children }: {
   );
 }
 
-export function FormularioDados({ barbeiro, nomeBarbeiro, servico, inicio }: Props) {
+export function FormularioDados({ barbeiro, nomeBarbeiro, servico, inicio, paises }: Props) {
   const [estado, acao, aEnviar] = useActionState<EstadoDados, FormData>(criarMarcacao, {});
   const valores = estado.valores;
   const erros = estado.erros ?? {};
+
+  // País do telemóvel e validação ao sair do campo (sem esperar pelo envio)
+  const [pais, setPais] = useState(valores?.pais ?? "PT");
+  const [telefone, setTelefone] = useState(valores?.telefone ?? "");
+  const [erroLocal, setErroLocal] = useState<string | null | undefined>(undefined);
+  const [estadoVisto, setEstadoVisto] = useState(estado);
+  if (estado !== estadoVisto) {
+    // depois de cada envio, volta a mostrar o erro que vem do servidor
+    setEstadoVisto(estado);
+    setErroLocal(undefined);
+  }
+  const verificar = (numero: string, codigo: string) =>
+    numero.trim() ? (validarTelemovel(numero, codigo) ? null : erroTelemovel(codigo)) : undefined;
+  const erroTelefone = erroLocal !== undefined ? erroLocal : erros.telefone;
+  const paisAtual = paises.find((p) => p.codigo === pais) ?? paises[0];
 
   const diaTexto = formatarDiaCurto(diaEmLisboa(inicio));
   const horaTexto = `${horaEmLisboa(inicio)} – ${horaDeFim(inicio, servico.duracao_min)}`;
@@ -172,24 +189,53 @@ export function FormularioDados({ barbeiro, nomeBarbeiro, servico, inicio }: Pro
           </label>
           <div
             className={`flex h-13 items-center rounded border bg-superficie transition-colors focus-within:border-texto ${
-              erros.telefone ? "border-red-400" : "border-borda"
+              erroTelefone ? "border-red-400" : "border-borda"
             }`}
           >
-            <span className="flex h-full items-center border-r border-borda px-4 text-base text-texto-3">+351</span>
+            {/* Escolha do país: mostra "PT +351", a lista verdadeira está por cima (invisível) */}
+            <div className="relative flex h-full shrink-0 items-center gap-1.5 border-r border-borda pl-4 pr-3 text-base text-texto-2 has-focus-visible:text-texto">
+              <span className="text-xs font-bold tracking-wider text-texto-3">{paisAtual.codigo}</span>
+              <span>{paisAtual.indicativo}</span>
+              <svg viewBox="0 0 12 12" className="size-3 text-texto-3" fill="none" stroke="currentColor" strokeWidth={1.6} aria-hidden="true">
+                <path d="M3 4.5l3 3 3-3" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              <select
+                name="pais"
+                value={pais}
+                aria-label="País do número"
+                onChange={(e) => {
+                  setPais(e.target.value);
+                  if (erroLocal !== undefined || erros.telefone) setErroLocal(verificar(telefone, e.target.value) ?? null);
+                }}
+                className="absolute inset-0 cursor-pointer appearance-none bg-superficie text-texto opacity-0"
+              >
+                {paises.map((p) => (
+                  <option key={p.codigo} value={p.codigo}>
+                    {p.nome} ({p.indicativo})
+                  </option>
+                ))}
+              </select>
+            </div>
             <input
               id="telefone"
               name="telefone"
               type="tel"
               inputMode="tel"
               autoComplete="tel-national"
-              placeholder="912 345 678"
-              defaultValue={valores?.telefone}
-              aria-invalid={Boolean(erros.telefone) || undefined}
-              aria-describedby={erros.telefone ? "erro-telefone" : undefined}
+              placeholder={pais === "PT" ? "912 345 678" : "Número de telemóvel"}
+              value={telefone}
+              onChange={(e) => {
+                setTelefone(e.target.value);
+                // se havia erro e o número já ficou certo, o erro desaparece logo
+                if (erroTelefone && validarTelemovel(e.target.value, pais)) setErroLocal(null);
+              }}
+              onBlur={() => setErroLocal(verificar(telefone, pais) ?? (erros.telefone ? null : undefined))}
+              aria-invalid={Boolean(erroTelefone) || undefined}
+              aria-describedby={erroTelefone ? "erro-telefone" : undefined}
               className="h-full min-w-0 flex-1 bg-transparent px-4 text-base text-texto outline-none placeholder:text-desativado"
             />
           </div>
-          <Erro id="erro-telefone" texto={erros.telefone} />
+          <Erro id="erro-telefone" texto={erroTelefone ?? undefined} />
         </div>
 
         <div className="flex flex-col gap-2">

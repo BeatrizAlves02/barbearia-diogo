@@ -3,11 +3,11 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { diaEmLisboa } from "@/lib/datas";
-import { UUID, normalizarTelefone } from "@/lib/validar";
+import { UUID, erroTelemovel, validarTelemovel } from "@/lib/validar";
 
 export type EstadoDados = {
   erros?: { nome?: string; telefone?: string; consentimento?: string; geral?: string };
-  valores?: { nome: string; telefone: string; nota: string; lembrete: boolean };
+  valores?: { nome: string; pais: string; telefone: string; nota: string; lembrete: boolean };
 };
 
 const HORA_OCUPADA = "Esta hora acabou de ser ocupada. Volta atrás e escolhe outra.";
@@ -21,19 +21,21 @@ export async function criarMarcacao(_anterior: EstadoDados, fd: FormData): Promi
   const servicoId = String(fd.get("servico") ?? "");
   const inicio = String(fd.get("inicio") ?? "");
   const nome = String(fd.get("nome") ?? "").trim().slice(0, 80);
+  const pais = String(fd.get("pais") ?? "PT");
   const telefoneEscrito = String(fd.get("telefone") ?? "");
   const nota = String(fd.get("nota") ?? "").trim().slice(0, 300);
   const lembrete = fd.get("lembrete") === "on";
   const consentimento = fd.get("consentimento") === "on";
 
   // Para o formulário voltar a mostrar o que a pessoa escreveu, se houver erro
-  const valores = { nome, telefone: telefoneEscrito, nota, lembrete };
+  const valores = { nome, pais, telefone: telefoneEscrito, nota, lembrete };
 
   // 1. Campos do formulário
   const erros: NonNullable<EstadoDados["erros"]> = {};
   if (nome.length < 2) erros.nome = "Escreve o teu nome.";
-  const telefone = normalizarTelefone(telefoneEscrito);
-  if (!telefone) erros.telefone = "Escreve um número português válido, com 9 dígitos.";
+  // Guardado no formato internacional, ex.: +351912345678
+  const telefone = validarTelemovel(telefoneEscrito, pais);
+  if (!telefone) erros.telefone = telefoneEscrito.trim() ? erroTelemovel(pais) : "Escreve o teu número de telemóvel.";
   if (!consentimento) erros.consentimento = "Para marcar, tens de aceitar a política de privacidade.";
   if (Object.keys(erros).length) return { erros, valores };
 
