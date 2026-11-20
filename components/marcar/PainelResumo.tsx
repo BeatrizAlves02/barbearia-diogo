@@ -17,14 +17,11 @@ type Props = {
 function CartaoBarbearia() {
   return (
     <div className="flex items-center gap-4">
-      <div className="flex size-16 shrink-0 items-center justify-center rounded border border-borda bg-bg">
-        <Image src="/logo.svg" alt="" width={30} height={35} />
-      </div>
-      <div className="flex min-w-0 flex-col gap-0.5">
+      <Image src="/logo.svg" alt="" width={44} height={51} className="shrink-0" />
+      <div className="flex min-w-0 flex-col gap-1">
         <span className="text-sm font-extrabold uppercase tracking-wide font-stretch-125%">
           Diogo Pimenta Barbershop
         </span>
-        <span className="text-[13px] text-texto-3">[MORADA]</span>
         <span className="text-[13px] text-texto-3">Ter a Sáb · Est. 2020</span>
       </div>
     </div>
