@@ -1,20 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import { IconeSeta, IconeVisto } from "@/components/icones";
+import { IconeVisto } from "@/components/icones";
 import { formatarDuracao, formatarPreco } from "@/lib/formatar";
+import type { Servico } from "./tipos";
 import { EsqueletoMarcacao } from "./EsqueletoMarcacao";
 import { PainelResumo } from "./PainelResumo";
 import { BotaoContinuar } from "./BotaoContinuar";
 import { BarbeiroEscolhido } from "./BarbeiroEscolhido";
-
-export type Servico = {
-  id: string;
-  nome: string;
-  duracao_min: number;
-  preco: number | null;
-};
+import { BarraResumoMovel } from "./BarraResumoMovel";
 
 type Props = { barbeiro: string; nomeBarbeiro: string; servicos: Servico[] };
 
@@ -97,46 +91,15 @@ export function EscolherServico({ barbeiro, nomeBarbeiro, servicos }: Props) {
         })}
       </fieldset>
 
-      {/* ---------- Resumo fixo em baixo (só telemóvel) ---------- */}
-      <div
-        style={{ animationDelay: "350ms" }}
-        className="fixed inset-x-0 bottom-0 mx-auto max-w-md px-5 pb-5 motion-safe:animate-entrar lg:hidden"
-      >
-        <div
-          aria-live="polite"
-          className={`flex flex-col gap-3.5 rounded-lg border p-4 shadow-[0_-16px_40px_rgba(0,0,0,0.7)] transition-colors duration-300 ${
-            servico ? "border-texto bg-texto text-tinta" : "border-borda bg-superficie text-texto"
-          }`}
-        >
-          {/* a "key" faz o texto animar de novo sempre que muda de serviço */}
-          <div key={servico?.id ?? "vazio"} className="flex flex-col gap-0.5 motion-safe:animate-entrar">
-            <span className="text-base font-bold">{servico ? servico.nome : "Nenhum serviço escolhido"}</span>
-            <span className={`text-sm ${servico ? "text-borda-forte" : "text-texto-3"}`}>
-              {servico
-                ? `${formatarDuracao(servico.duracao_min)} · ${formatarPreco(servico.preco)}`
-                : "Escolhe um serviço para continuares"}
-            </span>
-          </div>
-
-          {proximo ? (
-            <Link
-              href={proximo}
-              className="group flex h-13 items-center justify-center gap-2.5 rounded bg-bg text-sm font-extrabold tracking-[0.14em] text-texto font-stretch-125% transition-transform active:scale-[0.97]"
-            >
-              CONTINUAR
-              <IconeSeta className="size-5 transition-transform duration-300 group-hover:translate-x-1.5" />
-            </Link>
-          ) : (
-            <span
-              aria-disabled="true"
-              className="flex h-13 cursor-not-allowed items-center justify-center gap-2.5 rounded bg-borda text-sm font-extrabold tracking-[0.14em] text-desativado font-stretch-125%"
-            >
-              CONTINUAR
-              <IconeSeta className="size-5" />
-            </span>
-          )}
-        </div>
-      </div>
+      <BarraResumoMovel
+        titulo={servico ? servico.nome : "Nenhum serviço escolhido"}
+        subtitulo={
+          servico
+            ? `${formatarDuracao(servico.duracao_min)} · ${formatarPreco(servico.preco)}`
+            : "Escolhe um serviço para continuares"
+        }
+        href={proximo}
+      />
     </EsqueletoMarcacao>
   );
 }
