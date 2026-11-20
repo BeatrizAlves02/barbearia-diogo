@@ -125,7 +125,6 @@ export function FormularioDados({ barbeiro, nomeBarbeiro, servico, inicio, paise
                 {aEnviar && <Roda />}
                 {textoBotao}
               </button>
-              <p className="text-center text-[13px] text-texto-3">Pagas na barbearia, em dinheiro ou MB Way.</p>
             </div>
           }
         />
