@@ -1,4 +1,5 @@
 import { Fragment } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { BotaoPrimario } from "@/components/BotaoPrimario";
 import { CabecalhoDesktop } from "@/components/CabecalhoDesktop";
@@ -18,8 +19,15 @@ export default function Inicio() {
       {/* ---------- Hero ---------- */}
       <section className="relative isolate px-5 pt-52 lg:grid lg:grid-cols-2 lg:items-center lg:gap-16 lg:px-0 lg:pt-14">
         {/* Foto — telemóvel: fundo do topo · computador: coluna da direita */}
-        <div className="absolute inset-x-0 top-0 -z-10 flex h-105 items-center justify-center bg-superficie-2 pb-24 text-[11px] tracking-[0.2em] text-texto-3 motion-safe:animate-revelar lg:static lg:z-auto lg:order-2 lg:aspect-4/5 lg:h-auto lg:rounded lg:pb-0">
-          FOTO EM DESTAQUE
+        <div className="absolute inset-x-0 top-0 -z-10 h-105 overflow-hidden bg-superficie-2 motion-safe:animate-revelar lg:relative lg:z-auto lg:order-2 lg:aspect-3/4 lg:h-auto lg:rounded">
+          <Image
+            src="/destaque.jpg"
+            alt="Diogo Pimenta a cortar o cabelo a um cliente, com o néon «Book Your Cut» ao fundo"
+            fill
+            priority
+            sizes="(min-width: 1024px) 560px, 100vw"
+            className="object-cover object-[center_20%]"
+          />
         </div>
         <div className="absolute inset-x-0 top-47.5 -z-10 h-57.5 bg-linear-to-b from-transparent to-bg lg:hidden" />
 
