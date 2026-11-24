@@ -13,7 +13,6 @@ type Props = { searchParams: Promise<{ barbeiro?: string; servico?: string; inic
 const RESUMO_VAZIO = (
   <PainelResumo
     linhas={[
-      { rotulo: "Barbeiro", valor: "…", vazio: true },
       { rotulo: "Serviço", valor: "…", vazio: true },
       { rotulo: "Data e hora", valor: "…", vazio: true },
     ]}
@@ -24,7 +23,7 @@ const RESUMO_VAZIO = (
 function Moldura({ voltar = "/marcar", children }: { voltar?: string; children: React.ReactNode }) {
   return (
     <EsqueletoMarcacao
-      passo={4}
+      passo={3}
       voltar={voltar}
       titulo="Os teus dados"
       subtitulo="Só precisamos disto para guardar a tua marcação."

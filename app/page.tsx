@@ -86,7 +86,7 @@ export default function Inicio() {
           >
             <div className="flex flex-col gap-1">
               <dt className="text-[10px] tracking-[0.22em] text-texto-3">HORÁRIO</dt>
-              <dd className="text-sm font-semibold">Ter a Sáb</dd>
+              <dd className="text-sm font-semibold">Ter a Sáb · 09h–19h</dd>
             </div>
             <div className="flex flex-col gap-1">
               <dt className="text-[10px] tracking-[0.22em] text-texto-3">MORADA</dt>

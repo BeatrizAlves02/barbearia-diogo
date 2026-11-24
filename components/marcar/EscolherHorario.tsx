@@ -89,15 +89,14 @@ export function EscolherHorario({ barbeiro, nomeBarbeiro, servico, hoje, vagasIn
 
   return (
     <EsqueletoMarcacao
-      passo={3}
-      voltar={`/marcar/servico?barbeiro=${encodeURIComponent(barbeiro)}`}
+      passo={2}
+      voltar="/marcar"
       titulo="Dia e hora"
       subtitulo="Escolhe quando queres vir."
       comBarraMovel
       lateral={
         <PainelResumo
           linhas={[
-            { rotulo: "Barbeiro", valor: nomeAtribuido },
             { rotulo: "Serviço", valor: servico.nome, detalhe: formatarDuracao(servico.duracao_min) },
             diaTexto && horaTexto
               ? { rotulo: "Data e hora", valor: diaTexto, detalhe: horaTexto }
@@ -111,17 +110,11 @@ export function EscolherHorario({ barbeiro, nomeBarbeiro, servico, hoje, vagasIn
       {/* ---------- Escolhas já feitas ---------- */}
       <div className="divide-y divide-borda rounded border border-borda motion-safe:animate-entrar">
         <EscolhaFeita
-          rotulo="Barbeiro"
-          valor={nomeBarbeiro}
-          inicial={barbeiro === "qualquer" ? "·" : nomeBarbeiro.charAt(0)}
-          alterar="/marcar"
-        />
-        <EscolhaFeita
           rotulo="Serviço"
           valor={servico.nome}
           detalhe={`${formatarDuracao(servico.duracao_min)} · ${formatarPreco(servico.preco)}`}
           inicial={servico.nome.charAt(0)}
-          alterar={`/marcar/servico?barbeiro=${encodeURIComponent(barbeiro)}`}
+          alterar="/marcar"
         />
       </div>
 

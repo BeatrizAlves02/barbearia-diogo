@@ -1,129 +1,70 @@
 import { Suspense } from "react";
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { formatarHora, hojeEmLisboa } from "@/lib/formatar";
-import { IconeSeta } from "@/components/icones";
+import { EscolherServico } from "@/components/marcar/EscolherServico";
 import { EsqueletoMarcacao } from "@/components/marcar/EsqueletoMarcacao";
 import { PainelResumo } from "@/components/marcar/PainelResumo";
 import { BotaoContinuar } from "@/components/marcar/BotaoContinuar";
 
-type CartaoProps = {
-  href: string;
-  inicial: string;
-  titulo: string;
-  subtitulo?: string;
-  disponivel?: boolean;
-  atraso: number; // em milissegundos — faz os cartões entrarem um a um
-};
+/*
+  Passo 1 — Serviço.
+  Como agora só há um barbeiro (o Diogo), ele é escolhido automaticamente:
+  é o primeiro barbeiro ativo na base de dados.
+*/
 
-function CartaoBarbeiro({ href, inicial, titulo, subtitulo, disponivel = true, atraso }: CartaoProps) {
+const RESUMO_VAZIO = (
+  <PainelResumo
+    linhas={[
+      { rotulo: "Serviço", valor: "Por escolher", vazio: true },
+      { rotulo: "Data e hora", valor: "Por escolher", vazio: true },
+    ]}
+    acao={<BotaoContinuar href={null}>CONTINUAR</BotaoContinuar>}
+  />
+);
+
+function Moldura({ children }: { children: React.ReactNode }) {
   return (
-    <Link
-      href={href}
-      style={{ animationDelay: `${atraso}ms` }}
-      className="group flex min-h-19 items-center gap-4 rounded border border-borda px-4 py-3 transition-[border-color,background-color,transform] duration-200 hover:border-texto hover:bg-superficie-2 active:scale-[0.98] motion-safe:animate-entrar lg:min-h-24 lg:px-6"
-    >
-      <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-superficie-2 text-lg font-extrabold font-stretch-125% transition-colors duration-200 group-hover:bg-texto group-hover:text-tinta lg:size-14">
-        {inicial}
-      </span>
-      <span className="flex flex-1 flex-col gap-1">
-        <span className="text-base font-bold uppercase tracking-wide lg:text-lg">{titulo}</span>
-        {subtitulo && (
-          <span className="flex items-center gap-2 text-[13px] text-texto-3">
-            <span
-              aria-hidden="true"
-              className={`size-1.5 rounded-full ${disponivel ? "bg-texto" : "bg-desativado"}`}
-            />
-            {subtitulo}
-          </span>
-        )}
-      </span>
-      <IconeSeta className="size-5 text-texto-3 transition-[color,transform] duration-200 group-hover:translate-x-1 group-hover:text-texto" />
-    </Link>
-  );
-}
-
-async function ListaBarbeiros() {
-  const supabase = await createClient();
-  const { data: barbeiros, error } = await supabase
-    .from("barbeiros")
-    .select("id, nome, foto_url")
-    .eq("ativo", true)
-    .order("ordem");
-
-  if (error) return <p className="text-red-400">Erro: {error.message}</p>;
-
-  const lista = barbeiros ?? [];
-
-  // Horário de hoje de cada barbeiro (habitual ou o que ele mudou para hoje)
-  const hoje = hojeEmLisboa();
-  const horarios = await Promise.all(
-    lista.map((b) => supabase.rpc("horario_do_dia", { p_barbeiro: b.id, p_data: hoje }))
-  );
-
-  return (
-    <ul className="flex flex-col gap-2.5 lg:gap-3">
-      {lista.map((b, i) => {
-        const h = horarios[i].data?.[0];
-        const aberto = Boolean(h?.aberto && h.abre && h.fecha);
-        return (
-          <li key={b.id}>
-            <CartaoBarbeiro
-              href={`/marcar/servico?barbeiro=${b.id}`}
-              inicial={b.nome.charAt(0)}
-              titulo={b.nome}
-              subtitulo={aberto ? `Hoje · ${formatarHora(h.abre)} – ${formatarHora(h.fecha)}` : "Hoje não está"}
-              disponivel={aberto}
-              atraso={100 + i * 70}
-            />
-          </li>
-        );
-      })}
-      <li>
-        <CartaoBarbeiro
-          href="/marcar/servico?barbeiro=qualquer"
-          inicial="·"
-          titulo="Primeiro disponível"
-          subtitulo="Mostra todos os horários livres"
-          atraso={100 + lista.length * 70}
-        />
-      </li>
-    </ul>
-  );
-}
-
-// Cartões cinzentos a pulsar enquanto os dados chegam
-function ListaACarregar() {
-  return (
-    <ul className="flex flex-col gap-2.5 lg:gap-3" aria-hidden="true">
-      {[0, 1, 2].map((i) => (
-        <li key={i} className="h-19 rounded bg-superficie motion-safe:animate-pulse lg:h-24" />
-      ))}
-    </ul>
-  );
-}
-
-export default function ComQuem() {
-  return (
-    <EsqueletoMarcacao
-      passo={1}
-      voltar="/"
-      titulo="Com quem?"
-      subtitulo="Escolhe o teu barbeiro."
-      lateral={
-        <PainelResumo
-          linhas={[
-            { rotulo: "Barbeiro", valor: "Por escolher", vazio: true },
-            { rotulo: "Serviço", valor: "Por escolher", vazio: true },
-            { rotulo: "Data e hora", valor: "Por escolher", vazio: true },
-          ]}
-          acao={<BotaoContinuar href={null}>ESCOLHE UM BARBEIRO</BotaoContinuar>}
-        />
-      }
-    >
-      <Suspense fallback={<ListaACarregar />}>
-        <ListaBarbeiros />
-      </Suspense>
+    <EsqueletoMarcacao passo={1} voltar="/" titulo="O que queres marcar?" subtitulo="Escolhe o serviço." lateral={RESUMO_VAZIO}>
+      {children}
     </EsqueletoMarcacao>
+  );
+}
+
+/* Enquanto os dados chegam: a mesma página com cartões a pulsar */
+function ACarregar() {
+  return (
+    <Moldura>
+      <div className="flex flex-col gap-2.5 lg:gap-3" aria-hidden="true">
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="h-19 rounded bg-superficie motion-safe:animate-pulse lg:h-24" />
+        ))}
+      </div>
+    </Moldura>
+  );
+}
+
+async function Conteudo() {
+  const supabase = await createClient();
+  const [{ data: barbeiro }, { data: servicos, error }] = await Promise.all([
+    supabase.from("barbeiros").select("id").eq("ativo", true).order("ordem").limit(1).maybeSingle(),
+    supabase.from("servicos").select("id, nome, duracao_min, preco").eq("ativo", true).order("ordem"),
+  ]);
+
+  if (error) return <Moldura><p className="text-red-400">Erro: {error.message}</p></Moldura>;
+  if (!barbeiro) {
+    return (
+      <Moldura>
+        <p className="rounded border border-borda p-4 text-sm text-texto-2">De momento não é possível marcar online.</p>
+      </Moldura>
+    );
+  }
+
+  return <EscolherServico barbeiro={barbeiro.id} servicos={servicos ?? []} />;
+}
+
+export default function MarcarPagina() {
+  return (
+    <Suspense fallback={<ACarregar />}>
+      <Conteudo />
+    </Suspense>
   );
 }

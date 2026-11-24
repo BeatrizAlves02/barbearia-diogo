@@ -1,7 +1,7 @@
 import { TopoPasso } from "@/components/TopoPasso";
 
 type Props = {
-  passo: 1 | 2 | 3 | 4;
+  passo: 1 | 2 | 3;
   voltar: string;
   titulo: string;
   subtitulo: string;

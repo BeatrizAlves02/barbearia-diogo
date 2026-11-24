@@ -7,12 +7,11 @@ import type { Servico } from "./tipos";
 import { EsqueletoMarcacao } from "./EsqueletoMarcacao";
 import { PainelResumo } from "./PainelResumo";
 import { BotaoContinuar } from "./BotaoContinuar";
-import { BarbeiroEscolhido } from "./BarbeiroEscolhido";
 import { BarraResumoMovel } from "./BarraResumoMovel";
 
-type Props = { barbeiro: string; nomeBarbeiro: string; servicos: Servico[] };
+type Props = { barbeiro: string; servicos: Servico[] };
 
-export function EscolherServico({ barbeiro, nomeBarbeiro, servicos }: Props) {
+export function EscolherServico({ barbeiro, servicos }: Props) {
   const [escolhido, setEscolhido] = useState<string | null>(null);
   const servico = servicos.find((s) => s.id === escolhido);
 
@@ -22,15 +21,14 @@ export function EscolherServico({ barbeiro, nomeBarbeiro, servicos }: Props) {
 
   return (
     <EsqueletoMarcacao
-      passo={2}
-      voltar="/marcar"
+      passo={1}
+      voltar="/"
       titulo="O que queres marcar?"
       subtitulo="Escolhe o serviço."
       comBarraMovel
       lateral={
         <PainelResumo
           linhas={[
-            { rotulo: "Barbeiro", valor: nomeBarbeiro },
             servico
               ? { rotulo: "Serviço", valor: servico.nome, detalhe: formatarDuracao(servico.duracao_min) }
               : { rotulo: "Serviço", valor: "Por escolher", vazio: true },
@@ -41,8 +39,6 @@ export function EscolherServico({ barbeiro, nomeBarbeiro, servicos }: Props) {
         />
       }
     >
-      <BarbeiroEscolhido nome={nomeBarbeiro} />
-
       {/* ---------- Lista de serviços ---------- */}
       <fieldset className="flex flex-col gap-2.5 lg:gap-3">
         <legend className="sr-only">Serviços</legend>

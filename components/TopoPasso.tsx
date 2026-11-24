@@ -2,9 +2,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { IconeVoltar } from "./icones";
 
-const ETAPAS = ["Barbeiro", "Serviço", "Hora", "Dados"];
+const ETAPAS = ["Serviço", "Hora", "Dados"];
 
-type Props = { passo: 1 | 2 | 3 | 4; voltar: string };
+type Props = { passo: 1 | 2 | 3; voltar: string };
 
 export function TopoPasso({ passo, voltar }: Props) {
   return (
@@ -17,13 +17,13 @@ export function TopoPasso({ passo, voltar }: Props) {
         >
           <IconeVoltar />
         </Link>
-        <span className="text-[11px] tracking-[0.24em] text-texto-3">PASSO {passo} DE 4</span>
+        <span className="text-[11px] tracking-[0.24em] text-texto-3">PASSO {passo} DE {ETAPAS.length}</span>
         <Link href="/" aria-label="Diogo Pimenta — início" className="flex size-11 items-center justify-center transition-opacity hover:opacity-70">
           <Image src="/logo.svg" alt="" width={26} height={30} />
         </Link>
       </div>
 
-      <ol className="grid grid-cols-4 gap-1.5" aria-label="Passos da marcação">
+      <ol className="grid grid-cols-3 gap-1.5" aria-label="Passos da marcação">
         {ETAPAS.map((nome, i) => {
           const n = i + 1;
           return (

@@ -8,7 +8,7 @@ import { diaEmLisboa, horaDeFim, horaEmLisboa } from "@/lib/datas";
 const INSTAGRAM = "https://www.instagram.com/diogo.pimenta.barber/";
 
 type Props = {
-  nomeBarbeiro: string;
+  nomeBarbeiro?: string; // já não aparece (só há um barbeiro)
   servico: { nome: string; duracao_min: number; preco: number | null };
   inicio: string;
   linkCalendario: string;
@@ -33,13 +33,12 @@ function Visto({ className = "" }: { className?: string }) {
   );
 }
 
-export function Confirmacao({ nomeBarbeiro, servico, inicio, linkCalendario }: Props) {
+export function Confirmacao({ servico, inicio, linkCalendario }: Props) {
   const { semana, dia, mes } = partesDoDia(diaEmLisboa(inicio));
   const hora = `${horaEmLisboa(inicio)} – ${horaDeFim(inicio, servico.duracao_min)}`;
 
   const linhas = [
     { rotulo: "Serviço", valor: servico.nome, detalhe: formatarDuracao(servico.duracao_min) },
-    { rotulo: "Barbeiro", valor: nomeBarbeiro },
     { rotulo: "Local", valor: "[MORADA]" },
   ];
 

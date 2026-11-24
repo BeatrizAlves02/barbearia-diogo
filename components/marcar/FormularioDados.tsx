@@ -101,7 +101,7 @@ export function FormularioDados({ barbeiro, nomeBarbeiro, servico, inicio, paise
 
   return (
     <EsqueletoMarcacao
-      passo={4}
+      passo={3}
       voltar={voltarHorario}
       titulo="Os teus dados"
       subtitulo="Só precisamos disto para guardar a tua marcação."
@@ -109,7 +109,6 @@ export function FormularioDados({ barbeiro, nomeBarbeiro, servico, inicio, paise
       lateral={
         <PainelResumo
           linhas={[
-            { rotulo: "Barbeiro", valor: nomeBarbeiro },
             { rotulo: "Serviço", valor: servico.nome, detalhe: formatarDuracao(servico.duracao_min) },
             { rotulo: "Data e hora", valor: diaTexto, detalhe: horaTexto },
           ]}
@@ -132,13 +131,12 @@ export function FormularioDados({ barbeiro, nomeBarbeiro, servico, inicio, paise
     >
       {/* ---------- Resumo das escolhas ---------- */}
       <div className="divide-y divide-borda rounded border border-borda motion-safe:animate-entrar">
-        <EscolhaFeita rotulo="Barbeiro" valor={nomeBarbeiro} inicial={nomeBarbeiro.charAt(0)} alterar="/marcar" />
         <EscolhaFeita
           rotulo="Serviço"
           valor={servico.nome}
           detalhe={`${formatarDuracao(servico.duracao_min)} · ${formatarPreco(servico.preco)}`}
           inicial={servico.nome.charAt(0)}
-          alterar={`/marcar/servico?barbeiro=${barbeiro}`}
+          alterar="/marcar"
         />
         <EscolhaFeita rotulo="Data e hora" valor={diaTexto} detalhe={horaTexto} inicial="◷" alterar={voltarHorario} />
       </div>

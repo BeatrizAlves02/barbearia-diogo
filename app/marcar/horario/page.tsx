@@ -16,7 +16,6 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const RESUMO_VAZIO = (
   <PainelResumo
     linhas={[
-      { rotulo: "Barbeiro", valor: "…", vazio: true },
       { rotulo: "Serviço", valor: "…", vazio: true },
       { rotulo: "Data e hora", valor: "Por escolher", vazio: true },
     ]}
@@ -26,7 +25,7 @@ const RESUMO_VAZIO = (
 
 function Moldura({ children }: { children: React.ReactNode }) {
   return (
-    <EsqueletoMarcacao passo={3} voltar="/marcar" titulo="Dia e hora" subtitulo="Escolhe quando queres vir." lateral={RESUMO_VAZIO}>
+    <EsqueletoMarcacao passo={2} voltar="/marcar" titulo="Dia e hora" subtitulo="Escolhe quando queres vir." lateral={RESUMO_VAZIO}>
       {children}
     </EsqueletoMarcacao>
   );
