@@ -24,7 +24,7 @@ const MEDIA =
 export function TrabalhosRecentes() {
   return (
     <section className="flex flex-col gap-2.5 px-5 pt-8 lg:gap-5 lg:px-0 lg:pt-16">
-      <div className="ao-scroll flex items-center justify-between">
+      <div className="flex items-center justify-between">
         <h2 className="text-[11px] font-bold tracking-[0.24em]">TRABALHOS RECENTES</h2>
         <a
           href={INSTAGRAM}
