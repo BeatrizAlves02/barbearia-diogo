@@ -70,7 +70,7 @@ export default function Inicio() {
             style={{ animationDelay: "450ms" }}
             className="mt-2.5 text-[15px] leading-snug text-texto-2 motion-safe:animate-entrar lg:mt-6 lg:max-w-md lg:text-lg"
           >
-            Escolhe o barbeiro, o serviço e a hora. Fica marcado em menos de um minuto.
+            Escolhe o serviço, apanha a hora que te dá jeito e está feito. Sem chamadas, sem esperas.
           </p>
 
           <div style={{ animationDelay: "550ms" }} className="motion-safe:animate-entrar">

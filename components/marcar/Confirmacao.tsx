@@ -2,10 +2,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { classesBotaoPrimario } from "@/components/BotaoPrimario";
 import { IconeCalendario } from "@/components/icones";
+import { FalarComBarbearia } from "./FalarComBarbearia";
 import { formatarDuracao, formatarPreco } from "@/lib/formatar";
 import { diaEmLisboa, horaDeFim, horaEmLisboa } from "@/lib/datas";
 
-const INSTAGRAM = "https://www.instagram.com/diogo.pimenta.barber/";
 
 type Props = {
   nomeBarbeiro?: string; // já não aparece (só há um barbeiro)
@@ -145,14 +145,7 @@ function Botoes({ linkCalendario }: { linkCalendario: string }) {
         <IconeCalendario className="size-4" />
         ADICIONAR AO CALENDÁRIO
       </a>
-      <a
-        href={INSTAGRAM}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="flex h-14 items-center justify-center rounded border border-borda-forte text-sm font-bold tracking-[0.12em] font-stretch-125% transition-[border-color,background-color,transform] hover:border-texto hover:bg-superficie active:scale-[0.97]"
-      >
-        FALAR COM A BARBEARIA
-      </a>
+      <FalarComBarbearia />
       <Link href="/" className="link-sublinhado self-center py-3 text-sm text-texto-2 hover:text-texto lg:self-start">
         Voltar ao início
       </Link>
