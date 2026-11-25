@@ -63,14 +63,14 @@ export function CartaoMarcacao({ m, atraso = 0 }: { m: MarcacaoAgenda; atraso?: 
   return (
     <li
       style={{ animationDelay: `${atraso}ms` }}
-      className={`rounded-lg border bg-superficie motion-safe:animate-entrar ${
+      className={`rounded-lg border bg-superficie motion-safe:animate-entrar lg:flex ${
         m.agora ? "border-texto shadow-[0_0_0_1px_var(--color-texto)]" : "border-borda"
       } ${aGuardar ? "opacity-70" : ""}`}
     >
-      <div className={`flex gap-4 p-4 lg:p-5 ${inativa ? "opacity-55" : ""}`}>
+      <div className={`flex gap-4 p-4 lg:flex-1 lg:gap-6 lg:p-6 ${inativa ? "opacity-55" : ""}`}>
         {/* Hora */}
-        <div className="flex w-14 shrink-0 flex-col items-start">
-          <span className="text-lg font-extrabold tabular-nums leading-tight font-stretch-125%">{m.horaInicio}</span>
+        <div className="flex w-14 shrink-0 flex-col items-start lg:w-16">
+          <span className="text-lg font-extrabold tabular-nums leading-tight font-stretch-125% lg:text-xl">{m.horaInicio}</span>
           <span className="text-xs tabular-nums text-texto-3">{m.horaFim}</span>
           {m.agora && (
             <span className="mt-2 flex items-center gap-1.5 text-[9px] font-bold tracking-[0.2em]">
@@ -128,9 +128,9 @@ export function CartaoMarcacao({ m, atraso = 0 }: { m: MarcacaoAgenda; atraso?: 
       </div>
 
       {/* ---------- Ações ---------- */}
-      <div className="border-t border-borda px-4 py-3 lg:px-5">
+      <div className="border-t border-borda px-4 py-3 lg:flex lg:w-72 lg:shrink-0 lg:flex-col lg:justify-center lg:border-t-0 lg:border-l lg:p-5">
         {m.estado === "concluida" && painel === null && (
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center justify-between gap-3 lg:flex-col lg:items-start lg:gap-2">
             <span className="text-sm">
               <span className="text-texto-3">Pago · </span>
               <span className="font-bold">{formatarPreco(m.valorCobrado)}</span>
@@ -144,31 +144,31 @@ export function CartaoMarcacao({ m, atraso = 0 }: { m: MarcacaoAgenda; atraso?: 
         )}
 
         {inativa && (
-          <div className="flex justify-end">
+          <div className="flex justify-end lg:justify-start">
             <BotaoTexto onClick={() => executar(() => reabrirMarcacao(m.id))}>Desfazer</BotaoTexto>
           </div>
         )}
 
         {(m.estado === "confirmada" || m.estado === "chegou") && painel === null && (
-          <div className="flex items-center gap-2">
+          <div className="grid grid-cols-[1fr_auto_auto] gap-2 lg:grid-cols-2">
             <button
               type="button"
               onClick={() => setPainel("concluir")}
-              className="flex h-10 flex-1 items-center justify-center rounded bg-texto text-xs font-extrabold tracking-[0.14em] text-tinta font-stretch-125% transition-transform active:scale-[0.97]"
+              className="flex h-10 items-center lg:col-span-2 lg:h-11 justify-center rounded bg-texto text-xs font-extrabold tracking-[0.14em] text-tinta font-stretch-125% transition-transform active:scale-[0.97]"
             >
               CONCLUIR
             </button>
             <button
               type="button"
               onClick={() => executar(() => marcarFalta(m.id))}
-              className="flex h-10 items-center rounded border border-borda-forte px-4 text-xs font-bold tracking-[0.12em] transition-colors hover:border-texto active:scale-[0.97]"
+              className="flex h-10 items-center justify-center rounded border border-borda-forte px-4 text-xs font-bold tracking-[0.12em] transition-colors hover:border-texto active:scale-[0.97]"
             >
               FALTOU
             </button>
             <button
               type="button"
               onClick={() => setPainel("cancelar")}
-              className="flex h-10 items-center rounded border border-borda-forte px-4 text-xs font-bold tracking-[0.12em] transition-colors hover:border-red-400 hover:text-red-300 active:scale-[0.97]"
+              className="flex h-10 items-center justify-center rounded border border-borda-forte px-4 text-xs font-bold tracking-[0.12em] transition-colors hover:border-red-400 hover:text-red-300 active:scale-[0.97]"
             >
               CANCELAR
             </button>
@@ -178,8 +178,8 @@ export function CartaoMarcacao({ m, atraso = 0 }: { m: MarcacaoAgenda; atraso?: 
         {/* Concluir: quanto cobrou e como pagou */}
         {painel === "concluir" && (
           <div className="flex flex-col gap-3 motion-safe:animate-entrar">
-            <div className="flex gap-2">
-              <label className="flex h-11 w-28 items-center rounded border border-borda-forte bg-bg focus-within:border-texto">
+            <div className="flex flex-wrap gap-2">
+              <label className="flex h-11 w-28 items-center lg:w-full rounded border border-borda-forte bg-bg focus-within:border-texto">
                 <span className="sr-only">Valor cobrado</span>
                 <input
                   value={valor}

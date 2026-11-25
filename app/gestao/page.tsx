@@ -52,23 +52,28 @@ function Seta({ para }: { para: "esq" | "dir" }) {
 }
 
 function Moldura({ children }: { children: React.ReactNode }) {
-  return <main className="mx-auto min-h-dvh max-w-2xl px-5 pb-16">{children}</main>;
+  return <main className="mx-auto min-h-dvh max-w-2xl px-5 pb-16 lg:max-w-7xl lg:px-10">{children}</main>;
 }
 
 function ACarregar() {
   return (
     <Moldura>
       <div className="h-18 border-b border-divisor" />
-      <div className="mt-6 flex flex-col gap-4" aria-hidden="true">
-        <div className="h-8 w-56 rounded bg-superficie motion-safe:animate-pulse" />
-        <div className="grid grid-cols-7 gap-1.5">
-          {Array.from({ length: 7 }, (_, i) => (
-            <div key={i} className="h-16 rounded bg-superficie motion-safe:animate-pulse" />
+      <div className="mt-6 flex flex-col gap-4 lg:mt-8 lg:grid lg:grid-cols-[340px_minmax(0,1fr)] lg:items-start lg:gap-10" aria-hidden="true">
+        <div className="flex flex-col gap-4">
+          <div className="h-8 w-56 rounded bg-superficie motion-safe:animate-pulse" />
+          <div className="grid grid-cols-7 gap-1.5">
+            {Array.from({ length: 7 }, (_, i) => (
+              <div key={i} className="h-16 rounded bg-superficie motion-safe:animate-pulse" />
+            ))}
+          </div>
+          <div className="h-18 rounded-lg bg-superficie motion-safe:animate-pulse" />
+        </div>
+        <div className="flex flex-col gap-3">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="h-36 rounded-lg bg-superficie motion-safe:animate-pulse lg:h-32" />
           ))}
         </div>
-        {[0, 1, 2].map((i) => (
-          <div key={i} className="h-36 rounded-lg bg-superficie motion-safe:animate-pulse" />
-        ))}
       </div>
     </Moldura>
   );
@@ -154,8 +159,11 @@ async function Conteudo({ searchParams }: Props) {
     <Moldura>
       <CabecalhoGestao nome={barbeiro.nome} />
 
+      {/* Computador: dia, semana e resumo numa coluna fixa à esquerda; marcações à direita */}
+      <div className="lg:mt-8 lg:grid lg:grid-cols-[340px_minmax(0,1fr)] lg:items-start lg:gap-10">
+      <aside className="lg:sticky lg:top-8">
       {/* ---------- Dia e semana ---------- */}
-      <section className="mt-6 flex flex-col gap-4 motion-safe:animate-entrar">
+      <section className="mt-6 flex flex-col gap-4 motion-safe:animate-entrar lg:mt-0">
         <div className="flex items-center justify-between gap-3">
           <div className="flex flex-col gap-1">
             <span className="text-[10px] tracking-[0.24em] text-texto-3">{dia === hoje ? "HOJE" : "AGENDA"}</span>
@@ -230,22 +238,30 @@ async function Conteudo({ searchParams }: Props) {
           </div>
         ))}
       </dl>
+      </aside>
+
+      <div>
+      <h2 className="hidden text-[10px] tracking-[0.24em] text-texto-3 lg:block">
+        MARCAÇÕES DO DIA
+      </h2>
 
       {/* ---------- Marcações ---------- */}
       {error ? (
-        <p className="mt-6 text-sm text-red-400">Não foi possível carregar as marcações: {error.message}</p>
+        <p className="mt-6 text-sm text-red-400 lg:mt-4">Não foi possível carregar as marcações: {error.message}</p>
       ) : cartoes.length === 0 ? (
-        <div className="mt-6 rounded-lg border border-dashed border-borda px-5 py-10 text-center motion-safe:animate-entrar">
+        <div className="mt-6 rounded-lg border border-dashed border-borda px-5 py-10 text-center motion-safe:animate-entrar lg:mt-4 lg:py-20">
           <p className="font-mao text-3xl">dia livre!</p>
           <p className="mt-1 text-sm text-texto-3">Sem marcações neste dia.</p>
         </div>
       ) : (
-        <ul className="mt-6 flex flex-col gap-3">
+        <ul className="mt-6 flex flex-col gap-3 lg:mt-4">
           {cartoes.map((m, i) => (
             <CartaoMarcacao key={m.id} m={m} atraso={120 + i * 60} />
           ))}
         </ul>
       )}
+      </div>
+      </div>
     </Moldura>
   );
 }
