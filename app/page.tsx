@@ -1,12 +1,11 @@
 import { Fragment } from "react";
 import Image from "next/image";
-import Link from "next/link";
 import { BotaoPrimario } from "@/components/BotaoPrimario";
 import { CabecalhoDesktop } from "@/components/CabecalhoDesktop";
 import { Marca } from "@/components/Marca";
 import { NavInferior } from "@/components/NavInferior";
 import { TrabalhosRecentes } from "@/components/TrabalhosRecentes";
-import { IconeSeta, IconeUtilizador } from "@/components/icones";
+import { IconeSeta } from "@/components/icones";
 
 const LINHAS_TITULO = ["O teu", "próximo", "corte."];
 const FAIXA = ["CORTE", "BARBA", "CORTE + BARBA", "DIOGO PIMENTA", "EST. 2020"];
@@ -34,13 +33,6 @@ export default function Inicio() {
         {/* Topo — só no telemóvel */}
         <header className="absolute inset-x-5 top-4 flex items-center justify-between motion-safe:animate-descer lg:hidden">
           <Marca />
-          <Link
-            href="/conta"
-            aria-label="A minha conta"
-            className="flex size-11 items-center justify-center rounded-full border border-borda-forte bg-bg/50 transition-colors duration-300 hover:bg-texto hover:text-tinta active:scale-95"
-          >
-            <IconeUtilizador />
-          </Link>
         </header>
 
         {/* Texto */}

@@ -66,3 +66,31 @@ export function diaEmLisboa(iso: string) {
 export function horaDeFim(iso: string, minutos: number) {
   return horaEmLisboa(new Date(new Date(iso).getTime() + minutos * 60_000).toISOString());
 }
+
+const DIAS_LONGOS = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
+
+/** "2026-11-24" → "Terça, 24 de novembro" */
+export function formatarDiaLongo(ymd: string) {
+  const d = paraData(ymd);
+  return `${DIAS_LONGOS[d.getUTCDay()]}, ${d.getUTCDate()} de ${MESES_LONGOS[d.getUTCMonth()].toLowerCase()}`;
+}
+
+/** Segunda-feira da semana desse dia: "2026-11-27" (sex) → "2026-11-23" */
+export function segundaDaSemana(ymd: string) {
+  const dia = paraData(ymd).getUTCDay(); // 0 = domingo
+  return adicionarDias(ymd, -((dia + 6) % 7));
+}
+
+/** Instante (ISO, UTC) em que começa esse dia em Lisboa (tem em conta a hora de verão) */
+export function inicioDoDiaEmLisboa(ymd: string) {
+  const partes = new Intl.DateTimeFormat("en-US", { timeZone: "Europe/Lisbon", timeZoneName: "longOffset" }).formatToParts(
+    new Date(`${ymd}T12:00:00Z`)
+  );
+  const desvio = partes.find((p) => p.type === "timeZoneName")?.value.replace("GMT", "") || "Z";
+  return new Date(`${ymd}T00:00:00${desvio}`).toISOString();
+}
+
+/** É uma data válida no formato "AAAA-MM-DD"? */
+export function dataValida(ymd: string) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(ymd) && !Number.isNaN(paraData(ymd).getTime()) && paraData(ymd).toISOString().startsWith(ymd);
+}

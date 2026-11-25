@@ -2,7 +2,7 @@ import Link from "next/link";
 import { BotaoPrimario } from "./BotaoPrimario";
 import { Marca } from "./Marca";
 
-type Props = { ativo: "inicio" | "marcar" | "conta" };
+type Props = { ativo: "inicio" | "marcar" };
 
 export function CabecalhoDesktop({ ativo }: Props) {
   const estilo = (id: Props["ativo"]) =>
@@ -18,9 +18,6 @@ export function CabecalhoDesktop({ ativo }: Props) {
       <nav aria-label="Navegação principal" className="flex items-center gap-8">
         <Link href="/" aria-current={ativo === "inicio" ? "page" : undefined} className={estilo("inicio")}>
           INÍCIO
-        </Link>
-        <Link href="/conta" aria-current={ativo === "conta" ? "page" : undefined} className={estilo("conta")}>
-          CONTA
         </Link>
         <BotaoPrimario href="/marcar" tamanho="pequeno">
           MARCAR AGORA
