@@ -25,6 +25,7 @@ export type MarcacaoAgenda = {
   metodo: "mbway" | "dinheiro" | null;
   motivo: string | null;
   agora: boolean; // está a decorrer neste momento
+  passou: boolean; // a hora de fim já passou
 };
 
 const ESTADOS: Record<MarcacaoAgenda["estado"], { texto: string; classes: string }> = {
@@ -57,7 +58,9 @@ export function CartaoMarcacao({ m, atraso = 0 }: { m: MarcacaoAgenda; atraso?: 
   }
 
   const inativa = m.estado === "cancelada" || m.estado === "faltou";
-  const estado = ESTADOS[m.estado];
+  // Já passou e ainda não foi fechada: falta registar se foi feita ou se o cliente faltou
+  const porFechar = m.passou && (m.estado === "confirmada" || m.estado === "chegou");
+  const estado = porFechar ? { texto: "POR FECHAR", classes: "border-dashed border-texto-3 text-texto" } : ESTADOS[m.estado];
   const wa = m.telefoneLink ? `https://wa.me/${m.telefoneLink.replace(/\D/g, "")}` : null;
 
   return (
@@ -150,11 +153,11 @@ export function CartaoMarcacao({ m, atraso = 0 }: { m: MarcacaoAgenda; atraso?: 
         )}
 
         {(m.estado === "confirmada" || m.estado === "chegou") && painel === null && (
-          <div className="grid grid-cols-[1fr_auto_auto] gap-2 lg:grid-cols-2">
+          <div className={`grid gap-2 ${porFechar ? "grid-cols-[1fr_auto] lg:grid-cols-1" : "grid-cols-[1fr_auto_auto] lg:grid-cols-2"}`}>
             <button
               type="button"
               onClick={() => setPainel("concluir")}
-              className="flex h-10 items-center lg:col-span-2 lg:h-11 justify-center rounded bg-texto text-xs font-extrabold tracking-[0.14em] text-tinta font-stretch-125% transition-transform active:scale-[0.97]"
+              className={`flex h-10 items-center lg:h-11 ${porFechar ? "" : "lg:col-span-2"} justify-center rounded bg-texto text-xs font-extrabold tracking-[0.14em] text-tinta font-stretch-125% transition-transform active:scale-[0.97]`}
             >
               CONCLUIR
             </button>
@@ -165,6 +168,7 @@ export function CartaoMarcacao({ m, atraso = 0 }: { m: MarcacaoAgenda; atraso?: 
             >
               FALTOU
             </button>
+            {!porFechar && (
             <button
               type="button"
               onClick={() => setPainel("cancelar")}
@@ -172,6 +176,7 @@ export function CartaoMarcacao({ m, atraso = 0 }: { m: MarcacaoAgenda; atraso?: 
             >
               CANCELAR
             </button>
+            )}
           </div>
         )}
 

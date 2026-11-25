@@ -94,3 +94,16 @@ export function inicioDoDiaEmLisboa(ymd: string) {
 export function dataValida(ymd: string) {
   return /^\d{4}-\d{2}-\d{2}$/.test(ymd) && !Number.isNaN(paraData(ymd).getTime()) && paraData(ymd).toISOString().startsWith(ymd);
 }
+
+/** "2026-11-24" → "Novembro 2026" */
+export function nomeDoMes(ymd: string) {
+  const d = paraData(ymd);
+  return `${MESES_LONGOS[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
+}
+
+/** Primeiro dia do mês, com deslocação de meses: ("2026-11-24", 1) → "2026-12-01" */
+export function primeiroDoMes(ymd: string, deslocar = 0) {
+  const d = paraData(ymd);
+  const r = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + deslocar, 1));
+  return r.toISOString().slice(0, 10);
+}

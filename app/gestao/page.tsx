@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import { parsePhoneNumberFromString } from "libphonenumber-js/mobile";
 import { barbeiroComSessao } from "@/lib/gestao";
 import { formatarPreco, hojeEmLisboa } from "@/lib/formatar";
@@ -12,7 +13,9 @@ import {
   formatarDiaLongo,
   horaEmLisboa,
   inicioDoDiaEmLisboa,
+  nomeDoMes,
   numeroDoDia,
+  primeiroDoMes,
   segundaDaSemana,
 } from "@/lib/datas";
 import { CabecalhoGestao } from "@/components/gestao/CabecalhoGestao";
@@ -80,6 +83,7 @@ function ACarregar() {
 }
 
 async function Conteudo({ searchParams }: Props) {
+  await connection(); // a agenda é sempre gerada no momento (usa a hora atual)
   const { dia: pedido = "" } = await searchParams;
   const { supabase, user, barbeiro } = await barbeiroComSessao();
   if (!user) redirect("/gestao/entrar");
@@ -108,15 +112,22 @@ async function Conteudo({ searchParams }: Props) {
   const segunda = segundaDaSemana(dia);
   const semana = Array.from({ length: 7 }, (_, i) => adicionarDias(segunda, i));
 
-  // Marcações da semana inteira (para os números na faixa dos dias)
+  // Calendário do mês (computador): da segunda antes do dia 1 até ao domingo depois do último dia
+  const primeiro = primeiroDoMes(dia);
+  const inicioGrelha = segundaDaSemana(primeiro);
+  const fimGrelha = adicionarDias(segundaDaSemana(adicionarDias(primeiroDoMes(dia, 1), -1)), 7);
+  const grelha: string[] = [];
+  for (let d = inicioGrelha; d < fimGrelha; d = adicionarDias(d, 1)) grelha.push(d);
+
+  // Marcações do mês inteiro (para os números no calendário e na faixa da semana)
   const { data, error } = await supabase
     .from("marcacoes")
     .select(
       "id, inicio, fim, cliente_nome, cliente_telefone, nota, estado, valor_cobrado, metodo_pagamento, motivo_cancelamento, servicos(nome, preco)"
     )
     .eq("barbeiro_id", barbeiro.id)
-    .gte("inicio", inicioDoDiaEmLisboa(segunda))
-    .lt("inicio", inicioDoDiaEmLisboa(adicionarDias(segunda, 7)))
+    .gte("inicio", inicioDoDiaEmLisboa(inicioGrelha))
+    .lt("inicio", inicioDoDiaEmLisboa(fimGrelha))
     .order("inicio");
 
   const linhas = (data ?? []) as unknown as Linha[];
@@ -129,7 +140,9 @@ async function Conteudo({ searchParams }: Props) {
   const doDia = porDia.get(dia) ?? [];
   const ativas = doDia.filter((l) => l.estado !== "cancelada");
   const concluidas = doDia.filter((l) => l.estado === "concluida");
-  const faturado = concluidas.reduce((t, l) => t + Number(l.valor_cobrado ?? 0), 0);
+  const soma = (metodo?: string) =>
+    concluidas.filter((l) => !metodo || l.metodo_pagamento === metodo).reduce((t, l) => t + Number(l.valor_cobrado ?? 0), 0);
+  const faturado = soma();
 
   const agora = Date.now();
   const cartoes: MarcacaoAgenda[] = doDia.map((l) => {
@@ -150,6 +163,7 @@ async function Conteudo({ searchParams }: Props) {
       motivo: l.motivo_cancelamento,
       agora:
         l.estado !== "cancelada" && new Date(l.inicio).getTime() <= agora && agora < new Date(l.fim).getTime(),
+      passou: new Date(l.fim).getTime() <= agora,
     };
   });
 
@@ -160,14 +174,14 @@ async function Conteudo({ searchParams }: Props) {
       <CabecalhoGestao nome={barbeiro.nome} />
 
       {/* Computador: dia, semana e resumo numa coluna fixa à esquerda; marcações à direita */}
-      <div className="lg:mt-8 lg:grid lg:grid-cols-[340px_minmax(0,1fr)] lg:items-start lg:gap-10">
+      <div className="lg:mt-8 lg:grid lg:grid-cols-[440px_minmax(0,1fr)] lg:items-start lg:gap-12">
       <aside className="lg:sticky lg:top-8">
       {/* ---------- Dia e semana ---------- */}
       <section className="mt-6 flex flex-col gap-4 motion-safe:animate-entrar lg:mt-0">
         <div className="flex items-center justify-between gap-3">
           <div className="flex flex-col gap-1">
             <span className="text-[10px] tracking-[0.24em] text-texto-3">{dia === hoje ? "HOJE" : "AGENDA"}</span>
-            <h1 className="text-2xl font-extrabold uppercase leading-none font-stretch-125% lg:text-3xl">
+            <h1 className="text-2xl font-extrabold uppercase leading-none font-stretch-125% lg:text-4xl">
               {formatarDiaLongo(dia)}
             </h1>
           </div>
@@ -181,7 +195,8 @@ async function Conteudo({ searchParams }: Props) {
           )}
         </div>
 
-        <div className="flex items-center gap-1.5">
+        {/* Telemóvel: faixa da semana */}
+        <div className="flex items-center gap-1.5 lg:hidden">
           <Link
             href={link(adicionarDias(dia, -7))}
             aria-label="Semana anterior"
@@ -220,6 +235,62 @@ async function Conteudo({ searchParams }: Props) {
             <Seta para="dir" />
           </Link>
         </div>
+
+        {/* Computador: calendário do mês */}
+        <div className="hidden rounded-lg border border-borda bg-superficie p-5 lg:block">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-extrabold tracking-[0.16em] font-stretch-125%">{nomeDoMes(dia).toUpperCase()}</span>
+            <span className="flex gap-1">
+              <Link
+                href={link(primeiroDoMes(dia, -1))}
+                aria-label="Mês anterior"
+                className="flex size-9 items-center justify-center rounded-full text-texto-3 transition-colors hover:bg-superficie-2 hover:text-texto"
+              >
+                <Seta para="esq" />
+              </Link>
+              <Link
+                href={link(primeiroDoMes(dia, 1))}
+                aria-label="Mês seguinte"
+                className="flex size-9 items-center justify-center rounded-full text-texto-3 transition-colors hover:bg-superficie-2 hover:text-texto"
+              >
+                <Seta para="dir" />
+              </Link>
+            </span>
+          </div>
+          <div className="mt-4 grid grid-cols-7 gap-1 text-center">
+            {["SEG", "TER", "QUA", "QUI", "SEX", "SÁB", "DOM"].map((d) => (
+              <span key={d} className="pb-2 text-[9px] tracking-[0.16em] text-texto-3">
+                {d}
+              </span>
+            ))}
+            {grelha.map((d) => {
+              const n = (porDia.get(d) ?? []).filter((l) => l.estado !== "cancelada").length;
+              const sel = d === dia;
+              const foraDoMes = d.slice(0, 7) !== dia.slice(0, 7);
+              const passado = d < hoje;
+              return (
+                <Link
+                  key={d}
+                  href={link(d)}
+                  aria-current={sel ? "date" : undefined}
+                  aria-label={`${formatarDiaLongo(d)}${n ? `, ${n} marcações` : ""}`}
+                  className={`relative flex h-12 flex-col items-center justify-center rounded transition-colors ${
+                    sel
+                      ? "bg-texto text-tinta"
+                      : d === hoje
+                        ? "border border-texto hover:bg-superficie-2"
+                        : "hover:bg-superficie-2"
+                  } ${foraDoMes ? "opacity-30" : passado && !sel ? "text-texto-3" : ""}`}
+                >
+                  <span className="text-[15px] font-bold tabular-nums">{numeroDoDia(d)}</span>
+                  <span className={`h-3 text-[10px] font-bold tabular-nums leading-3 ${sel ? "" : "text-texto-2"}`}>
+                    {n ? `${n}` : ""}
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
       </section>
 
       {/* ---------- Resumo do dia ---------- */}
@@ -232,12 +303,20 @@ async function Conteudo({ searchParams }: Props) {
           { rotulo: "CONCLUÍDAS", valor: `${concluidas.length}/${ativas.length}` },
           { rotulo: "FATURADO", valor: formatarPreco(faturado) },
         ].map((s) => (
-          <div key={s.rotulo} className="flex flex-col gap-1 px-4 py-3">
+          <div key={s.rotulo} className="flex flex-col gap-1 px-4 py-3 lg:px-5 lg:py-4">
             <dt className="text-[9px] tracking-[0.2em] text-texto-3">{s.rotulo}</dt>
-            <dd className="text-xl font-extrabold tabular-nums font-stretch-125%">{s.valor}</dd>
+            <dd className="text-xl font-extrabold tabular-nums font-stretch-125% lg:text-2xl">{s.valor}</dd>
           </div>
         ))}
       </dl>
+      <p style={{ animationDelay: "120ms" }} className="mt-3 flex justify-between px-1 text-xs text-texto-3 motion-safe:animate-entrar">
+        <span>
+          MB Way <strong className="text-texto-2">{formatarPreco(soma("mbway"))}</strong>
+        </span>
+        <span>
+          Dinheiro <strong className="text-texto-2">{formatarPreco(soma("dinheiro"))}</strong>
+        </span>
+      </p>
       </aside>
 
       <div>
