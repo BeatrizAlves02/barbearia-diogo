@@ -5,7 +5,7 @@ import { abrirDias, adicionarFerias, apagarDiaEspecial, apagarFerias, fecharHora
 import { classesBotaoPrimario } from "@/components/BotaoPrimario";
 import { formatarHora } from "@/lib/formatar";
 import { adicionarDias, diaEmLisboa, formatarDiaCurto, horaEmLisboa } from "@/lib/datas";
-import { curta, diaInteiro, minutos, paraHora, type Bloqueio, type TurnoEspecial } from "@/lib/horarios";
+import { curta, diaInteiro, minutos, paraHora, turnoDoDia, type Bloqueio, type TurnoEspecial, type TurnoSemanal } from "@/lib/horarios";
 import { feriado } from "@/lib/feriados";
 import { Alternador, SeletorData, SeletorHora } from "./ControlosHorario";
 
@@ -15,7 +15,17 @@ type Escolha = "dia" | "horas" | "aberto";
  * Tudo o que muda o horário habitual num ou mais dias:
  * fechar (folga, férias), fechar só umas horas, ou abrir com outro horário.
  */
-export function FolgasEFerias({ especiais, bloqueios, hoje }: { especiais: TurnoEspecial[]; bloqueios: Bloqueio[]; hoje: string }) {
+export function FolgasEFerias({
+  semanal,
+  especiais,
+  bloqueios,
+  hoje,
+}: {
+  semanal: TurnoSemanal[];
+  especiais: TurnoEspecial[];
+  bloqueios: Bloqueio[];
+  hoje: string;
+}) {
   const [dias, setDias] = useState<string[]>([]);
   const [aberto, setAberto] = useState(false);
   const [soHoras, setSoHoras] = useState(false);
@@ -33,15 +43,22 @@ export function FolgasEFerias({ especiais, bloqueios, hoje }: { especiais: Turno
   const ajuda: Record<Escolha, string> = {
     dia: `Ninguém pode marcar ${nesses}.`,
     horas: `Ninguém pode marcar entre estas horas. O resto do dia fica normal.`,
-    aberto: `${n > 1 ? "Nestes dias" : "Neste dia"} trabalhas a estas horas (mesmo que seja folga ou feriado).`,
+    aberto: `${n > 1 ? "Nestes dias" : "Neste dia"} trabalhas a estas horas.`,
   };
-  const feriadosEscolhidos = dias.filter((d) => feriado(d));
 
-  function mudarDias(novos: string[]) {
-    setDias(novos);
+  // O Diogo trabalha nesse dia? (horário habitual + dias mudados + feriados + férias de dia inteiro)
+  const deFerias = (d: string) => bloqueios.some((b) => diaInteiro(b) && diaEmLisboa(b.inicio) <= d && d < diaEmLisboa(b.fim));
+  const trabalha = (d: string) => turnoDoDia(d, semanal, especiais).aberto && !deFerias(d);
+  // Só se pode ABRIR um dia que está fechado, e FECHAR um dia que está aberto.
+  // (Dias de férias já marcadas: para abrir, apaga primeiro as férias na lista em baixo.)
+  const desativar = (d: string) => (escolha === "aberto" ? trabalha(d) || deFerias(d) : !trabalha(d));
+
+  function mudarEscolha(novoAberto: boolean, novoSoHoras: boolean) {
+    setAberto(novoAberto);
+    setSoHoras(novoSoHoras);
     setErro(null);
-    // só feriados escolhidos → já estão fechados, o mais provável é querer abrir
-    if (novos.length && novos.every((d) => feriado(d))) setAberto(true);
+    // tira os dias que deixaram de fazer sentido (ex.: estava a fechar e passou a abrir)
+    setDias((ds) => ds.filter((d) => (novoAberto ? !trabalha(d) && !deFerias(d) : trabalha(d))));
   }
 
   function guardar() {
@@ -96,41 +113,50 @@ export function FolgasEFerias({ especiais, bloqueios, hoje }: { especiais: Turno
     <section style={{ animationDelay: "80ms" }} className="rounded-lg border border-borda bg-superficie motion-safe:animate-entrar">
       <div className="flex flex-col gap-1 border-b border-borda p-5 lg:p-6">
         <h2 className="text-sm font-extrabold tracking-[0.16em] font-stretch-125%">FOLGAS E FÉRIAS</h2>
-        <p className="text-sm text-texto-3">Fecha um ou vários dias, ou muda o horário só desses dias.</p>
+        <p className="text-sm text-texto-3">Fecha dias em que trabalhas, ou abre dias em que estás fechado.</p>
       </div>
 
       <div className="flex flex-col gap-4 p-5 lg:p-6">
-        <SeletorData modo="varios" rotulo="1. DIAS (TOCA OU ARRASTA)" dias={dias} min={hoje} onMudar={mudarDias} etiqueta={(d) => feriado(d)?.nome} />
-
-        {feriadosEscolhidos.length > 0 && (
-          <p className="rounded border border-borda-forte bg-bg px-4 py-3 text-sm text-texto-2 motion-safe:animate-entrar">
-            <strong className="font-bold text-texto">{feriadosEscolhidos.map((d) => feriado(d)!.nome).join(", ")}</strong>{" "}
-            {feriadosEscolhidos.length > 1 ? "são feriados" : "é feriado"}: já está fechado. Só precisas de guardar se quiseres trabalhar.
-          </p>
-        )}
-
         <div className="flex flex-col gap-1.5">
-          <span className="text-[10px] tracking-[0.22em] text-texto-3">2. {n > 1 ? "NESSES DIAS" : "NESSE DIA"} ESTÁS…</span>
+          <span className="text-[10px] tracking-[0.22em] text-texto-3">1. O QUE QUERES FAZER?</span>
           <Alternador
             valor={aberto ? "aberto" : "fechado"}
-            onMudar={(v) => setAberto(v === "aberto")}
+            onMudar={(v) => mudarEscolha(v === "aberto", soHoras)}
             opcoes={[
-              { valor: "fechado", rotulo: "FECHADO" },
-              { valor: "aberto", rotulo: "ABERTO" },
+              { valor: "fechado", rotulo: "FECHAR" },
+              { valor: "aberto", rotulo: "ABRIR" },
             ]}
           />
         </div>
 
         {!aberto && (
-          <div className="ml-1 flex flex-col gap-3 border-l-2 border-borda-forte pl-4 motion-safe:animate-entrar">
-            <Alternador
-              valor={soHoras ? "horas" : "dia"}
-              onMudar={(v) => setSoHoras(v === "horas")}
-              opcoes={[
-                { valor: "dia", rotulo: "O DIA TODO" },
-                { valor: "horas", rotulo: "SÓ UMAS HORAS" },
-              ]}
-            />
+          <Alternador
+            valor={soHoras ? "horas" : "dia"}
+            onMudar={(v) => mudarEscolha(false, v === "horas")}
+            opcoes={[
+              { valor: "dia", rotulo: "O DIA TODO" },
+              { valor: "horas", rotulo: "SÓ UMAS HORAS" },
+            ]}
+          />
+        )}
+
+        <SeletorData
+          key={escolha === "aberto" ? "abrir" : "fechar"}
+          modo="varios"
+          rotulo="2. DIAS (TOCA OU ARRASTA)"
+          dias={dias}
+          min={hoje}
+          onMudar={(ds) => {
+            setDias(ds);
+            setErro(null);
+          }}
+          etiqueta={(d) => feriado(d)?.nome}
+          desativar={desativar}
+          dica={escolha === "aberto" ? "Só dias em que estás fechado" : "Só dias em que estás aberto"}
+        />
+
+        {!aberto && (
+          <div className="flex flex-col gap-3">
             {soHoras ? (
               <div className="flex flex-wrap items-center gap-2 motion-safe:animate-entrar">
                 <span className="w-9 text-[11px] font-bold tracking-[0.14em] text-texto-3">DAS</span>

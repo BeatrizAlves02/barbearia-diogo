@@ -183,7 +183,16 @@ function IconeCalendario() {
 
 type PropsData =
   | { modo: "dia"; valor: string; onMudar: (dia: string) => void; min: string; rotulo: string; etiqueta?: (dia: string) => string | undefined }
-  | { modo: "varios"; dias: string[]; onMudar: (dias: string[]) => void; min: string; rotulo: string; etiqueta?: (dia: string) => string | undefined };
+  | {
+      modo: "varios";
+      dias: string[];
+      onMudar: (dias: string[]) => void;
+      min: string;
+      rotulo: string;
+      etiqueta?: (dia: string) => string | undefined;
+      desativar?: (dia: string) => boolean; // dias que não se podem escolher
+      dica?: string; // texto por baixo do calendário
+    };
 
 /** Junta dias seguidos: ["2026-12-22","2026-12-23","2026-12-27"] → [["2026-12-22","2026-12-23"],["2026-12-27","2026-12-27"]] */
 export function juntarSeguidos(dias: string[]): [string, string][] {
@@ -205,6 +214,8 @@ export function juntarSeguidos(dias: string[]): [string, string][] {
  */
 export function SeletorData(props: PropsData) {
   const { min, rotulo, etiqueta } = props;
+  const desativar = props.modo === "varios" ? props.desativar : undefined;
+  const pode = (d: string) => d >= min && !desativar?.(d);
   const [aberto, setAberto] = useState(false);
   const inicial = props.modo === "dia" ? props.valor : [...props.dias].sort()[0];
   const [mes, setMes] = useState(primeiroDoMes(inicial || min));
@@ -238,7 +249,7 @@ export function SeletorData(props: PropsData) {
     const { desde, por, antes } = arrasto.current;
     const [a, b] = desde <= ate ? [desde, ate] : [ate, desde];
     const faixa: string[] = [];
-    for (let d = a; d <= b; d = adicionarDias(d, 1)) if (d >= min) faixa.push(d);
+    for (let d = a; d <= b; d = adicionarDias(d, 1)) if (pode(d)) faixa.push(d);
     const conj = new Set(antes);
     for (const d of faixa) {
       if (por) conj.add(d);
@@ -347,7 +358,7 @@ export function SeletorData(props: PropsData) {
               </span>
             ))}
             {dias.map((d) => {
-              const desativado = d < min;
+              const desativado = !pode(d);
               const foraDoMes = d.slice(0, 7) !== mes.slice(0, 7);
               const escolhido = escolhidos.has(d);
               // nos "varios", dias escolhidos seguidos ficam ligados (sem cantos arredondados no meio)
@@ -394,7 +405,7 @@ export function SeletorData(props: PropsData) {
             {props.modo === "varios" ? (
               <>
                 <span className="text-texto-3">
-                  {props.dias.length ? `${props.dias.length} ${props.dias.length === 1 ? "dia" : "dias"}` : "Toca nos dias ou arrasta"}
+                  {props.dias.length ? `${props.dias.length} ${props.dias.length === 1 ? "dia" : "dias"}` : props.dica ?? "Toca nos dias ou arrasta"}
                 </span>
                 <span className="flex items-center gap-3">
                   {props.dias.length > 0 && (
