@@ -165,3 +165,55 @@ export async function apagarFerias(id: string): Promise<Resultado> {
   atualizarPaginas();
   return { ok: true };
 }
+
+/* ---------- Folgas e férias (vários dias de uma vez) ---------- */
+
+function diasValidos(dias: string[]) {
+  const lista = [...new Set(dias)].sort();
+  return lista.length && lista.length <= 366 && lista.every(dataValida) ? lista : null;
+}
+
+/** Abrir nesses dias com outro horário (ex.: trabalhar num feriado ou numa segunda) */
+export async function abrirDias(dias: string[], turno: TurnoEnviado): Promise<Resultado> {
+  const lista = diasValidos(dias);
+  if (!lista) return { erro: "Escolhe os dias." };
+  const erro = validarTurno({ ...turno, aberto: true });
+  if (erro) return { erro };
+  const p = await preparar();
+  if ("erro" in p) return { erro: p.erro };
+
+  const { error } = await p.supabase
+    .from("horario_dia")
+    .upsert(lista.map((data) => ({ barbeiro_id: p.barbeiro.id, data, ...limpar({ ...turno, aberto: true }) })), { onConflict: "barbeiro_id,data" });
+  if (error) {
+    console.error("Abrir dias:", error.message);
+    return { erro: "Não foi possível guardar. Tenta outra vez." };
+  }
+  atualizarPaginas();
+  return { ok: true };
+}
+
+/** Fechar só umas horas nesses dias (ex.: das 14:00 às 16:00) */
+export async function fecharHorasVarios(dias: string[], de: string, ate: string): Promise<Resultado> {
+  const lista = diasValidos(dias);
+  if (!lista) return { erro: "Escolhe os dias." };
+  if (!HORA.test(de) || !HORA.test(ate)) return { erro: "Horas inválidas." };
+  if (minutos(ate) <= minutos(de)) return { erro: "A hora do fim tem de ser depois da do início." };
+  const p = await preparar();
+  if ("erro" in p) return { erro: p.erro };
+
+  const { error } = await p.supabase.from("bloqueios").insert(
+    lista.map((dia) => ({
+      barbeiro_id: p.barbeiro.id,
+      inicio: momentoEmLisboa(dia, de),
+      fim: minutos(ate) >= 1440 ? inicioDoDiaEmLisboa(adicionarDias(dia, 1)) : momentoEmLisboa(dia, ate),
+      motivo: null,
+    }))
+  );
+  if (error) {
+    console.error("Fechar horas:", error.message);
+    return { erro: "Não foi possível guardar. Tenta outra vez." };
+  }
+  atualizarPaginas();
+  return { ok: true };
+}

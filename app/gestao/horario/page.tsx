@@ -5,11 +5,10 @@ import { connection } from "next/server";
 import { barbeiroComSessao } from "@/lib/gestao";
 import { hojeEmLisboa } from "@/lib/formatar";
 import { diaEmLisboa, formatarDiaCurto, horaEmLisboa } from "@/lib/datas";
-import { diaInteiro, foraDoHorario, turnoDoDia, type Bloqueio, type TurnoEspecial, type TurnoSemanal } from "@/lib/horarios";
+import { foraDoHorario, turnoDoDia, type Bloqueio, type TurnoEspecial, type TurnoSemanal } from "@/lib/horarios";
 import { CabecalhoGestao } from "@/components/gestao/CabecalhoGestao";
 import { HorarioHabitual } from "@/components/gestao/HorarioHabitual";
-import { DiasEspeciais } from "@/components/gestao/DiasEspeciais";
-import { Ferias } from "@/components/gestao/Ferias";
+import { FolgasEFerias } from "@/components/gestao/FolgasEFerias";
 
 export const metadata = { title: "Horário · Gestão" };
 
@@ -122,10 +121,7 @@ async function Conteudo() {
 
       <div className="mt-6 flex flex-col gap-5 lg:mt-8 lg:grid lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)] lg:items-start lg:gap-10">
         <HorarioHabitual key={JSON.stringify(s)} inicial={s} />
-        <div className="flex flex-col gap-5">
-          <DiasEspeciais lista={e} horasFechadas={b.filter((x) => !diaInteiro(x))} hoje={hoje} />
-          <Ferias lista={b.filter(diaInteiro)} hoje={hoje} />
-        </div>
+        <FolgasEFerias especiais={e} bloqueios={b} hoje={hoje} />
       </div>
     </Moldura>
   );
