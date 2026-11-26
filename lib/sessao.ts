@@ -3,8 +3,10 @@
 /** Área de gestão: sem mexer na app durante este tempo, a sessão termina sozinha */
 export const LIMITE_INATIVIDADE_GESTAO_MIN = 60;
 
-/** Site dos clientes: uma marcação a meio, parada durante este tempo, recomeça do início */
-export const LIMITE_INATIVIDADE_MARCACAO_MIN = 20;
+/** Site dos clientes: parado durante este tempo, volta à página inicial (no topo) */
+export const LIMITE_INATIVIDADE_CLIENTE_MIN = 20;
+/** (nome antigo, mantido para compatibilidade) */
+export const LIMITE_INATIVIDADE_MARCACAO_MIN = LIMITE_INATIVIDADE_CLIENTE_MIN;
 
 /** Cookie com a hora da última vez que o barbeiro mexeu na app */
 export const COOKIE_ATIVIDADE = "gestao_atividade";

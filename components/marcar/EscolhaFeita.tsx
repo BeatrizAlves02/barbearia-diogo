@@ -24,7 +24,7 @@ export function EscolhaFeita({ rotulo, valor, detalhe, inicial, alterar }: Props
           </span>
         </div>
       </div>
-      <Link href={alterar} className="link-sublinhado shrink-0 text-[13px] text-texto-2 hover:text-texto">
+      <Link href={alterar} className="link-sublinhado shrink-0 text-[13px] text-texto-2 transition-opacity hover:text-texto active:text-texto active:opacity-60">
         Alterar
       </Link>
     </div>

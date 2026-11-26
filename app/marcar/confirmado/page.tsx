@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { barbeiroPorId, servicoPorId } from "@/lib/dados-publicos";
 import { UUID } from "@/lib/validar";
 import { Confirmacao } from "@/components/marcar/Confirmacao";
 
@@ -22,11 +22,7 @@ async function Conteudo({ searchParams }: Props) {
   const dataInicio = new Date(inicio);
   if (!UUID.test(barbeiro) || !UUID.test(servico) || Number.isNaN(dataInicio.getTime())) return <Invalido />;
 
-  const supabase = await createClient();
-  const [{ data: s }, { data: b }] = await Promise.all([
-    supabase.from("servicos").select("nome, duracao_min, preco").eq("id", servico).maybeSingle(),
-    supabase.from("barbeiros").select("nome").eq("id", barbeiro).maybeSingle(),
-  ]);
+  const [s, b] = await Promise.all([servicoPorId(servico), barbeiroPorId(barbeiro)]);
   if (!s || !b) return <Invalido />;
 
   const iso = dataInicio.toISOString();

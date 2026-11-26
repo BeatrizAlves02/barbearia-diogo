@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { servicoPorId } from "@/lib/dados-publicos";
 import { diaEmLisboa } from "@/lib/datas";
 import { UUID, erroTelemovel, validarTelemovel } from "@/lib/validar";
 
@@ -47,13 +48,8 @@ export async function criarMarcacao(_anterior: EstadoDados, fd: FormData): Promi
 
   const supabase = await createClient();
 
-  const { data: servico } = await supabase
-    .from("servicos")
-    .select("duracao_min")
-    .eq("id", servicoId)
-    .eq("ativo", true)
-    .maybeSingle();
-  if (!servico) return { erros: { geral: "Este serviço já não está disponível." }, valores };
+  const servico = await servicoPorId(servicoId);
+  if (!servico?.ativo) return { erros: { geral: "Este serviço já não está disponível." }, valores };
 
   // 3. A hora ainda está livre e dentro do horário?
   const dia = diaEmLisboa(dataInicio.toISOString());

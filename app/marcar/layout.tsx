@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { ExpirarMarcacao } from "@/components/marcar/ExpirarMarcacao";
+import { SegurancaCliente } from "@/components/SegurancaCliente";
 
 /* Comum a todos os passos da marcação */
 export default function MarcarLayout({ children }: { children: React.ReactNode }) {
@@ -7,7 +7,7 @@ export default function MarcarLayout({ children }: { children: React.ReactNode }
     <>
       {children}
       <Suspense>
-        <ExpirarMarcacao />
+        <SegurancaCliente />
       </Suspense>
     </>
   );

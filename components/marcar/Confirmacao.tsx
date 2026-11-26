@@ -3,6 +3,7 @@ import Link from "next/link";
 import { classesBotaoPrimario } from "@/components/BotaoPrimario";
 import { IconeCalendario } from "@/components/icones";
 import { FalarComBarbearia } from "./FalarComBarbearia";
+import { MORADA } from "@/lib/contactos";
 import { formatarDuracao, formatarPreco } from "@/lib/formatar";
 import { diaEmLisboa, horaDeFim, horaEmLisboa } from "@/lib/datas";
 
@@ -39,14 +40,14 @@ export function Confirmacao({ servico, inicio, linkCalendario }: Props) {
 
   const linhas = [
     { rotulo: "Serviço", valor: servico.nome, detalhe: formatarDuracao(servico.duracao_min) },
-    { rotulo: "Local", valor: "[MORADA]" },
+    { rotulo: "Local", valor: MORADA },
   ];
 
   return (
     <main className="mx-auto flex min-h-dvh max-w-md flex-col px-5 pb-10 pt-6 lg:max-w-6xl lg:px-10 lg:pt-8">
       {/* Topo: logo com o nome, como no resto do site */}
       <header className="flex justify-center motion-safe:animate-entrar lg:justify-start">
-        <Link href="/" aria-label="Diogo Pimenta — início" className="flex items-center gap-3.5 transition-opacity hover:opacity-80">
+        <Link href="/" aria-label="Diogo Pimenta — início" className="flex items-center gap-3.5 transition-[opacity,transform] hover:opacity-80 active:scale-95">
           <Image src="/logo.svg" alt="" width={42} height={48} priority />
           <span className="flex flex-col gap-1">
             <span className="text-base font-bold tracking-[0.3em] font-stretch-125%">DIOGO PIMENTA</span>
@@ -146,7 +147,7 @@ function Botoes({ linkCalendario }: { linkCalendario: string }) {
         ADICIONAR AO CALENDÁRIO
       </a>
       <FalarComBarbearia />
-      <Link href="/" className="link-sublinhado self-center py-3 text-sm text-texto-2 hover:text-texto lg:self-start">
+      <Link href="/" className="link-sublinhado self-center py-3 text-sm text-texto-2 transition-opacity hover:text-texto active:text-texto active:opacity-60 lg:self-start">
         Voltar ao início
       </Link>
     </>

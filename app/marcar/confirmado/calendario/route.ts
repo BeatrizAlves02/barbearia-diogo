@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { UUID } from "@/lib/validar";
+import { MORADA } from "@/lib/contactos";
 
 /* "2026-11-24T10:00:00.000Z" → "20261124T100000Z" (formato dos calendários) */
 function paraIcs(data: Date) {
@@ -37,7 +38,7 @@ export async function GET(pedido: Request) {
     `DTEND:${paraIcs(fim)}`,
     `SUMMARY:${s.nome} — Diogo Pimenta Barbershop`,
     `DESCRIPTION:Com ${b.nome}`,
-    "LOCATION:[MORADA]",
+    `LOCATION:${MORADA.replace(/,/g, "\\,")}`,
     "BEGIN:VALARM",
     "TRIGGER:-PT1H",
     "ACTION:DISPLAY",

@@ -30,7 +30,7 @@ export function TrabalhosRecentes() {
           href={INSTAGRAM}
           target="_blank"
           rel="noopener noreferrer"
-          className="group link-sublinhado flex items-center gap-1 text-[13px] text-texto-2 hover:text-texto"
+          className="group link-sublinhado flex items-center gap-1 text-[13px] text-texto-2 transition-opacity hover:text-texto active:text-texto active:opacity-60"
         >
           Ver Instagram
           <IconeExterno className="size-3.5 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />

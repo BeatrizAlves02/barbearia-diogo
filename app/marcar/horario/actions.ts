@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { servicoPorId } from "@/lib/dados-publicos";
 import type { Vaga } from "@/components/marcar/tipos";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -20,13 +21,8 @@ export async function buscarVagas(barbeiro: string, servicoId: string, de: strin
   const supabase = await createClient();
 
   // A duração vem da base de dados (não confiamos no browser)
-  const { data: servico } = await supabase
-    .from("servicos")
-    .select("duracao_min")
-    .eq("id", servicoId)
-    .eq("ativo", true)
-    .maybeSingle();
-  if (!servico) return [];
+  const servico = await servicoPorId(servicoId);
+  if (!servico?.ativo) return [];
 
   const { data, error } = await supabase.rpc("vagas", {
     p_barbeiro: barbeiro === "qualquer" ? null : barbeiro,

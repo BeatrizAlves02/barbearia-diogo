@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { barbeirosAtivos, servicoPorId } from "@/lib/dados-publicos";
 import { hojeEmLisboa } from "@/lib/formatar";
 import { adicionarDias } from "@/lib/datas";
 import { buscarVagas } from "./actions";
@@ -70,10 +71,8 @@ async function Conteudo({ searchParams }: Props) {
   if (!(barbeiro === "qualquer" || UUID.test(barbeiro)) || !UUID.test(servico)) return <EscolhaInvalida />;
 
   const supabase = await createClient();
-  const [{ data: s }, { data: barbeiros }] = await Promise.all([
-    supabase.from("servicos").select("id, nome, duracao_min, preco").eq("id", servico).eq("ativo", true).maybeSingle(),
-    supabase.from("barbeiros").select("id, nome").eq("ativo", true),
-  ]);
+  const [servicoEscolhido, barbeiros] = await Promise.all([servicoPorId(servico), barbeirosAtivos()]);
+  const s = servicoEscolhido?.ativo ? servicoEscolhido : null;
 
   if (!s) return <EscolhaInvalida />;
   const nomes: Record<string, string> = Object.fromEntries((barbeiros ?? []).map((b) => [b.id, b.nome]));

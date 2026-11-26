@@ -1,5 +1,8 @@
+import { Suspense } from "react";
 import Link from "next/link";
+import { SegurancaCliente } from "@/components/SegurancaCliente";
 import { Marca } from "@/components/Marca";
+import { TELEFONE_TEXTO } from "@/lib/contactos";
 
 export const metadata = { title: "Política de privacidade — Diogo Pimenta Barbershop" };
 
@@ -23,8 +26,8 @@ export default function Privacidade() {
         <section>
           <h2>QUEM TRATA OS TEUS DADOS</h2>
           <p>
-            [NOME DO RESPONSÁVEL / EMPRESA], NIF [NIF], com morada em [MORADA] (&quot;Diogo Pimenta Barbershop&quot;).
-            Contacto: [EMAIL OU TELEFONE].
+            [NOME DO RESPONSÁVEL / EMPRESA], NIF [NIF], com morada em Rua do Sobreiro, n.º 100 – Vila Frescainha de São Pedro, Barcelos (&quot;Diogo Pimenta Barbershop&quot;).
+            Contacto: telemóvel {TELEFONE_TEXTO}.
           </p>
         </section>
         <section>
@@ -52,7 +55,7 @@ export default function Privacidade() {
         <section>
           <h2>OS TEUS DIREITOS</h2>
           <p>
-            Podes pedir para ver, corrigir ou apagar os teus dados a qualquer momento, através de [CONTACTO]. Se achares
+            Podes pedir para ver, corrigir ou apagar os teus dados a qualquer momento, através do telemóvel {TELEFONE_TEXTO}. Se achares
             que os teus dados não foram bem tratados, podes apresentar queixa à CNPD (cnpd.pt).
           </p>
         </section>
@@ -61,6 +64,10 @@ export default function Privacidade() {
       <Link href="/marcar" className="link-sublinhado mt-10 inline-block text-sm font-bold">
         ← Voltar à marcação
       </Link>
+
+      <Suspense>
+        <SegurancaCliente />
+      </Suspense>
     </main>
   );
 }

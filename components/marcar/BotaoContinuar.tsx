@@ -18,7 +18,7 @@ export function BotaoContinuar({ href, children }: Props) {
   return (
     <BotaoPrimario href={href}>
       {children}
-      <IconeSeta className="size-5 transition-transform duration-300 group-hover:translate-x-1.5" />
+      <IconeSeta className="size-5 transition-[transform,opacity] duration-300 group-hover:translate-x-1.5 group-has-data-pendente:opacity-0" />
     </BotaoPrimario>
   );
 }

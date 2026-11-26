@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { createClient } from "@/lib/supabase/server";
+import { barbeirosAtivos, servicosAtivos } from "@/lib/dados-publicos";
 import { EscolherServico } from "@/components/marcar/EscolherServico";
 import { EsqueletoMarcacao } from "@/components/marcar/EsqueletoMarcacao";
 import { PainelResumo } from "@/components/marcar/PainelResumo";
@@ -43,13 +43,8 @@ function ACarregar() {
 }
 
 async function Conteudo() {
-  const supabase = await createClient();
-  const [{ data: barbeiro }, { data: servicos, error }] = await Promise.all([
-    supabase.from("barbeiros").select("id").eq("ativo", true).order("ordem").limit(1).maybeSingle(),
-    supabase.from("servicos").select("id, nome, duracao_min, preco").eq("ativo", true).order("ordem"),
-  ]);
-
-  if (error) return <Moldura><p className="text-red-400">Erro: {error.message}</p></Moldura>;
+  const [barbeiros, servicos] = await Promise.all([barbeirosAtivos(), servicosAtivos()]);
+  const barbeiro = barbeiros[0];
   if (!barbeiro) {
     return (
       <Moldura>
@@ -58,7 +53,7 @@ async function Conteudo() {
     );
   }
 
-  return <EscolherServico barbeiro={barbeiro.id} servicos={servicos ?? []} />;
+  return <EscolherServico barbeiro={barbeiro.id} servicos={servicos} />;
 }
 
 export default function MarcarPagina() {

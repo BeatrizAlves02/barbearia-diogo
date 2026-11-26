@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { barbeiroPorId, servicoPorId } from "@/lib/dados-publicos";
 import { diaEmLisboa } from "@/lib/datas";
 import { UUID, listaDePaises } from "@/lib/validar";
 import { FormularioDados } from "@/components/marcar/FormularioDados";
@@ -68,10 +69,8 @@ async function Conteudo({ searchParams }: Props) {
   }
 
   const supabase = await createClient();
-  const [{ data: s }, { data: b }] = await Promise.all([
-    supabase.from("servicos").select("id, nome, duracao_min, preco").eq("id", servico).eq("ativo", true).maybeSingle(),
-    supabase.from("barbeiros").select("nome").eq("id", barbeiro).eq("ativo", true).maybeSingle(),
-  ]);
+  const [servicoEscolhido, b] = await Promise.all([servicoPorId(servico), barbeiroPorId(barbeiro)]);
+  const s = servicoEscolhido?.ativo ? servicoEscolhido : null;
   if (!s || !b) {
     return <Aviso texto="Não encontrámos o barbeiro ou o serviço escolhido." link="/marcar" rotulo="Começar a marcação" />;
   }

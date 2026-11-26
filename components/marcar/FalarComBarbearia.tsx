@@ -3,8 +3,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { IconeExterno } from "@/components/icones";
 
-const TELEFONE = "+351932506203";
-const INSTAGRAM = "https://www.instagram.com/diogo.pimenta.barber/";
+import { INSTAGRAM, TELEFONE, TELEFONE_TEXTO } from "@/lib/contactos";
 
 function IconeTelefone({ className = "" }: { className?: string }) {
   return (
@@ -95,7 +94,7 @@ export function FalarComBarbearia() {
               </span>
               <span className="flex flex-1 flex-col text-left">
                 <span className="text-[15px] font-bold">Ligar</span>
-                <span className="text-sm tabular-nums text-texto-3">932 506 203</span>
+                <span className="text-sm tabular-nums text-texto-3">{TELEFONE_TEXTO}</span>
               </span>
             </a>
             <a href={INSTAGRAM} target="_blank" rel="noopener noreferrer" className={opcao}>

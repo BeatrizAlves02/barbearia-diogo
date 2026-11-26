@@ -19,10 +19,9 @@ export function CabecalhoGestao({ nome }: { nome: string }) {
       <form action={sair}>
         <button
           type="submit"
-          aria-label="Sair"
-          className="flex h-10 shrink-0 items-center gap-2 rounded-full border border-borda px-3 text-[11px] sm:px-4 font-bold tracking-[0.16em] text-texto-2 transition-colors hover:border-texto hover:text-texto active:scale-95"
+          className="flex h-10 shrink-0 items-center gap-2 rounded-full border border-borda px-4 text-[11px] font-bold tracking-[0.16em] text-texto-2 transition-colors hover:border-texto hover:text-texto active:scale-95"
         >
-          <span className="hidden sm:inline">SAIR</span>
+          SAIR
           <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 17l5-5-5-5M15 12H4" />
           </svg>
