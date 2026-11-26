@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { abrirDias, adicionarFerias, apagarDiaEspecial, apagarFerias, fecharHorasVarios } from "@/app/gestao/horario/actions";
+import { adicionarFerias, apagarDiaEspecial, apagarFerias, fecharHorasVarios, guardarHorariosDosDias } from "@/app/gestao/horario/actions";
 import { classesBotaoPrimario } from "@/components/BotaoPrimario";
 import { formatarHora } from "@/lib/formatar";
 import { adicionarDias, diaEmLisboa, formatarDiaCurto, horaEmLisboa } from "@/lib/datas";
-import { curta, diaInteiro, esticar, minutos, normalizar, paraHora, turnoDoDia, ULTIMA_MAX, ABRE_MIN, type Bloqueio, type TurnoEspecial, type TurnoSemanal } from "@/lib/horarios";
+import { acrescentarHoras, curta, diaInteiro, minutos, normalizar, paraHora, turnoDoDia, ULTIMA_MAX, ABRE_MIN, type Bloqueio, type TurnoEspecial, type TurnoSemanal } from "@/lib/horarios";
 import { feriado } from "@/lib/feriados";
 import { Alternador, SeletorData, SeletorHora } from "./ControlosHorario";
 
@@ -43,7 +43,7 @@ export function FolgasEFerias({
   const ajuda: Record<Escolha, string> = {
     dia: `Ninguém pode marcar ${nesses}.`,
     horas: `Ninguém pode marcar entre estas horas. O resto do dia fica normal.`,
-    aberto: `${n > 1 ? "Nestes dias" : "Neste dia"} trabalhas a estas horas (serve para abrir uma folga ou para mudar as horas).`,
+    aberto: "Num dia aberto, estas horas são acrescentadas às que já tens. Numa folga, abres a estas horas.",
   };
 
   // O Diogo trabalha nesse dia? (horário habitual + dias mudados + feriados + férias de dia inteiro)
@@ -62,15 +62,44 @@ export function FolgasEFerias({
     setDias((ds) => ds.filter((d) => (novoAberto ? !deFerias(d) : trabalha(d))));
   }
 
+  // ABRIR / MUDAR: como fica cada dia escolhido
+  const planos =
+    escolha === "aberto"
+      ? dias.map((d) => {
+          const t = turnoDoDia(d, semanal, especiais);
+          if (t.aberto && t.abre && t.fecha) {
+            const j = acrescentarHoras(t, abre, fecha);
+            return {
+              dia: d,
+              antes: `${curta(t.abre)} – ${curta(t.fecha)}`,
+              depois: `${j.turno.abre} – ${j.turno.fecha}`,
+              turno: j.turno,
+              buraco: j.buraco,
+            };
+          }
+          const turno = { aberto: true, abre, fecha: normalizar(fecha), pausa_inicio: null, pausa_fim: null };
+          return { dia: d, antes: null, depois: `${turno.abre} – ${turno.fecha}`, turno, buraco: null };
+        })
+      : [];
+  const todosAbertos = planos.length > 0 && planos.every((p) => p.antes);
+  const buraco = planos.find((p) => p.buraco)?.buraco;
+
   function guardar() {
     setErro(null);
     iniciar(async () => {
-      const r =
+      let r =
         escolha === "aberto"
-          ? await abrirDias(dias, { aberto: true, abre, fecha: normalizar(fecha), pausa_inicio: null, pausa_fim: null })
+          ? await guardarHorariosDosDias(planos.map((p) => ({ dia: p.dia, turno: p.turno })))
           : escolha === "horas"
             ? await fecharHorasVarios(dias, de, ate)
             : await adicionarFerias(dias, mensagem);
+      // horas a mais com um intervalo pelo meio → esse intervalo fica fechado (como o Diogo espera)
+      if (!r.erro && escolha === "aberto")
+        for (const p of planos)
+          if (p.buraco && minutos(p.buraco[1]) > minutos(p.buraco[0])) {
+            r = await fecharHorasVarios([p.dia], p.buraco[0], p.buraco[1]);
+            if (r.erro) break;
+          }
       if (r.erro) setErro(r.erro);
       else {
         setDias([]);
@@ -87,7 +116,7 @@ export function FolgasEFerias({
       data: d.data,
       titulo: formatarDiaCurto(d.data),
       texto: d.aberto
-        ? `Aberto · ${formatarHora(curta(d.abre) ?? "")} – ${formatarHora(curta(d.fecha) ?? "")}${(curta(d.fecha) ?? "") < (curta(d.abre) ?? "") ? " (dia seguinte)" : ""}`
+        ? `Aberto · ${formatarHora(curta(d.abre) ?? "")} – ${formatarHora(curta(d.fecha) ?? "")}`
         : "Fechado o dia todo",
       apagar: () => apagarDiaEspecial(d.data),
     })),
@@ -150,14 +179,6 @@ export function FolgasEFerias({
           dias={dias}
           min={hoje}
           onMudar={(ds) => {
-            // ao escolher o 1.º dia num dia já aberto, começa com as horas que já tem (para só as ajustar)
-            if (escolha === "aberto" && !dias.length && ds.length) {
-              const t = turnoDoDia(ds[0], semanal, especiais);
-              if (t.aberto && t.abre && t.fecha) {
-                setAbre(curta(t.abre)!);
-                setFecha(paraHora(esticar(curta(t.fecha)!, curta(t.abre)!)));
-              }
-            }
             setDias(ds);
             setErro(null);
           }}
@@ -191,11 +212,38 @@ export function FolgasEFerias({
         )}
 
         {aberto && (
-          <div className="flex flex-wrap items-center gap-2 motion-safe:animate-entrar">
-            <SeletorHora rotulo="Abre" valor={abre} min={paraHora(ABRE_MIN)} max="23:30" onMudar={(h) => { setAbre(h); if (minutos(fecha) < minutos(h)) setFecha(h); }} />
-            <span className="text-texto-3">–</span>
-            <SeletorHora rotulo="Última marcação" valor={fecha} min={abre} max={paraHora(ULTIMA_MAX)} onMudar={setFecha} />
+          <div className="flex flex-col gap-1.5 motion-safe:animate-entrar">
+            <span className="text-[10px] tracking-[0.22em] text-texto-3">
+              {todosAbertos ? "3. HORAS A MAIS (DAS · ÚLTIMA MARCAÇÃO)" : "3. HORAS (ABRE · ÚLTIMA MARCAÇÃO)"}
+            </span>
+            <div className="flex flex-wrap items-center gap-2">
+              <SeletorHora rotulo="Abre" valor={abre} min={paraHora(ABRE_MIN)} max="23:30" onMudar={(h) => { setAbre(h); if (minutos(fecha) < minutos(h)) setFecha(h); }} />
+              <span className="text-texto-3">–</span>
+              <SeletorHora rotulo="Última marcação" valor={fecha} min={abre} max={paraHora(ULTIMA_MAX)} onMudar={setFecha} />
+            </div>
           </div>
+        )}
+
+        {/* Como vai ficar cada dia */}
+        {aberto && planos.length > 0 && (
+          <ul className="flex flex-col divide-y divide-borda rounded border border-borda-forte bg-bg text-sm motion-safe:animate-entrar">
+            {planos.slice(0, 4).map((p) => (
+              <li key={p.dia} className="flex items-center justify-between gap-3 px-4 py-2.5">
+                <span className="font-bold">{formatarDiaCurto(p.dia)}</span>
+                <span className="flex items-center gap-2 tabular-nums">
+                  <span className="text-texto-3">{p.antes ?? "Fechado"}</span>
+                  <span className="text-texto-3">→</span>
+                  <span className="font-bold">{p.depois}</span>
+                </span>
+              </li>
+            ))}
+            {planos.length > 4 && <li className="px-4 py-2.5 text-texto-3">e mais {planos.length - 4} dias…</li>}
+          </ul>
+        )}
+        {aberto && buraco && (
+          <p className="text-sm text-texto-2 motion-safe:animate-entrar">
+            Entre as {buraco[0]} e as {buraco[1]} fica fechado (ninguém marca nesse intervalo).
+          </p>
         )}
 
         <p key={`${escolha}${n > 1}`} className="text-sm text-texto-2 motion-safe:animate-entrar">{ajuda[escolha]}</p>

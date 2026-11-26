@@ -221,3 +221,26 @@ export async function fecharHorasVarios(dias: string[], de: string, ate: string)
   atualizarPaginas();
   return { ok: true };
 }
+
+/** Guardar o horário de cada dia (cada dia pode ficar com horas diferentes) */
+export async function guardarHorariosDosDias(itens: { dia: string; turno: TurnoEnviado }[]): Promise<Resultado> {
+  if (!itens.length || itens.length > 366) return { erro: "Escolhe os dias." };
+  for (const i of itens) {
+    if (!dataValida(i.dia)) return { erro: "Dias inválidos." };
+    const erro = validarTurno({ ...i.turno, aberto: true });
+    if (erro) return { erro };
+  }
+  const p = await preparar();
+  if ("erro" in p) return { erro: p.erro };
+
+  const { error } = await p.supabase.from("horario_dia").upsert(
+    itens.map((i) => ({ barbeiro_id: p.barbeiro.id, data: i.dia, ...limpar({ ...i.turno, aberto: true }) })),
+    { onConflict: "barbeiro_id,data" }
+  );
+  if (error) {
+    console.error("Horário dos dias:", error.message);
+    return { erro: "Não foi possível guardar. Tenta outra vez." };
+  }
+  atualizarPaginas();
+  return { ok: true };
+}

@@ -100,3 +100,33 @@ export function foraDoHorario(
   const vespera = cabe(turnoDe(adicionarDias(dia, -1)), 1440); // ex.: 00:30 de sábado no turno de sexta
   return vespera ? hoje : null;
 }
+
+/**
+ * Acrescentar horas a um dia que já está aberto (não substitui o horário, estica-o).
+ * Ex.: dia 09:00–19:00 + horas a mais 20:00–03:00 → 09:00–03:00.
+ * Devolve o horário novo e, se ficar um "buraco" grande entre os dois, esse intervalo
+ * (que passa a estar aberto também — o Diogo pode fechá-lo se quiser).
+ */
+export function acrescentarHoras(turno: Turno, abre: string, ultima: string) {
+  const a1 = minutos(curta(turno.abre)!);
+  const u1 = esticar(curta(turno.fecha)!, curta(turno.abre)!);
+  const a2 = minutos(abre);
+  const u2 = minutos(ultima); // já vem "esticada" (ex.: 27:00 = 03:00)
+  const a = Math.min(a1, a2);
+  const u = Math.max(u1, u2);
+  const abreNovo = paraHora(a);
+  // buraco: entre o fim do horário que já tinha e o início das horas a mais (ou vice-versa), se passar de 1 h
+  let buraco: [string, string] | null = null;
+  if (a2 - u1 > 60) buraco = [paraHora((u1 + 60) % 1440), paraHora(a2 % 1440)];
+  else if (a1 - u2 > 60) buraco = [paraHora((u2 + 60) % 1440), paraHora(a1 % 1440)];
+  // a pausa que já tinha mantém-se (se continuar dentro do horário)
+  const pausa =
+    turno.pausa_inicio && turno.pausa_fim
+      ? { pausa_inicio: curta(turno.pausa_inicio), pausa_fim: curta(turno.pausa_fim) }
+      : { pausa_inicio: null, pausa_fim: null };
+  return {
+    turno: { aberto: true, abre: abreNovo, fecha: paraHora(u % 1440), ...pausa },
+    ultimaEsticada: paraHora(u),
+    buraco,
+  };
+}

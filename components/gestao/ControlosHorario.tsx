@@ -33,7 +33,7 @@ function lerHora(texto: string): string | null {
 }
 
 /* Escolher uma hora: − / + (de meia em meia hora) ou escrevendo diretamente.
-   Aceita horas "esticadas" (ex.: "25:00" = 01:00 do dia seguinte) → mostra "01:00" com "+1 DIA". */
+   Aceita horas "esticadas" (ex.: "25:00" = 01:00 do dia seguinte) → mostra "01:00". */
 export function SeletorHora({
   valor,
   onMudar,
@@ -111,11 +111,6 @@ export function SeletorHora({
         }}
         className="w-14 bg-transparent text-center text-[15px] font-bold tabular-nums outline-none selection:bg-texto selection:text-tinta"
       />
-      {v >= 1440 && (
-        <span title="Dia seguinte" className="-ml-1 shrink-0 rounded-sm bg-texto px-1 py-0.5 text-[9px] font-extrabold tracking-[0.06em] text-tinta motion-safe:animate-entrar">
-          +1
-        </span>
-      )}
       <button type="button" aria-label={`${rotulo}: mais meia hora`} disabled={v >= minutos(max)} onClick={() => passo(30)} className={botao}>
         +
       </button>

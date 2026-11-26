@@ -80,6 +80,16 @@ export function Agenda({ hoje, dia: diaPedido, grelha, folgas, feriados, marcaco
   const ativas = doDia.filter((m) => m.estado !== "cancelada");
   const concluidas = ativas.filter((m) => m.estado === "concluida");
   const fechadas = ativas.filter((m) => m.estado === "concluida" || m.estado === "faltou");
+  const faltaram = ativas.filter((m) => m.estado === "faltou").length;
+  const canceladas = doDia.length - ativas.length;
+  const porFazer = ativas.length - fechadas.length;
+  // Ex.: "4 concluídas · 1 faltou · 2 canceladas · 1 por fazer" (só o que existe)
+  const contagem = [
+    concluidas.length && `${concluidas.length} ${concluidas.length === 1 ? "concluída" : "concluídas"}`,
+    faltaram && `${faltaram} ${faltaram === 1 ? "faltou" : "faltaram"}`,
+    canceladas && `${canceladas} ${canceladas === 1 ? "cancelada" : "canceladas"}`,
+    porFazer && `${porFazer} por fazer`,
+  ].filter(Boolean) as string[];
   const soma = (metodo?: string) =>
     concluidas.filter((m) => !metodo || m.metodo === metodo).reduce((t, m) => t + (m.valorCobrado ?? 0), 0);
   const faturado = soma();
@@ -246,12 +256,19 @@ export function Agenda({ hoje, dia: diaPedido, grelha, folgas, feriados, marcaco
             </div>
             <p className="mt-2 text-xs text-texto-3">
               {ativas.length === 0
-                ? "Sem marcações."
+                ? canceladas
+                  ? "Todas as marcações foram canceladas."
+                  : "Sem marcações."
                 : diaFechado
                   ? "Dia fechado. Bom trabalho!"
                   : dia > hoje
                     ? `${ativas.length} ${ativas.length === 1 ? "marcação" : "marcações"} por acontecer`
                     : `${ativas.length - fechadas.length} por fechar`}
+              {canceladas > 0 && ativas.length > 0 && (
+                <span className="text-texto-3/70">
+                  {" "}· {canceladas === 1 ? "A cancelada não conta." : `As ${canceladas} canceladas não contam.`}
+                </span>
+              )}
             </p>
           </div>
 
@@ -285,8 +302,18 @@ export function Agenda({ hoje, dia: diaPedido, grelha, folgas, feriados, marcaco
       <div className={`transition-opacity ${aNavegar ? "pointer-events-none opacity-50" : ""}`}>
         <h2 className="mt-8 flex items-center justify-between text-[10px] tracking-[0.24em] text-texto-3 lg:mt-0">
           MARCAÇÕES DO DIA
-          <span className="tabular-nums">{ativas.length}</span>
+          <span className="tabular-nums">{doDia.length}</span>
         </h2>
+        {contagem.length > 1 && (
+          <p key={`contagem-${dia}`} className="mt-1.5 flex flex-wrap justify-end gap-x-2 text-xs text-texto-3 motion-safe:animate-entrar">
+            {contagem.map((c, i) => (
+              <span key={c}>
+                {i > 0 && <span className="mr-2 text-texto-3/50">·</span>}
+                {c}
+              </span>
+            ))}
+          </p>
+        )}
 
         {erro ? (
           <p className="mt-4 text-sm text-red-400">Não foi possível carregar as marcações: {erro}</p>
