@@ -31,6 +31,7 @@ type Linha = {
   valor_cobrado: number | null;
   metodo_pagamento: MarcacaoAgenda["metodo"];
   motivo_cancelamento: string | null;
+  cancelado_por: MarcacaoAgenda["canceladoPor"];
   servicos: { nome: string; preco: number | null } | null;
 };
 
@@ -108,7 +109,7 @@ async function Conteudo({ searchParams }: Props) {
     supabase
     .from("marcacoes")
     .select(
-      "id, inicio, fim, cliente_nome, cliente_telefone, nota, estado, valor_cobrado, metodo_pagamento, motivo_cancelamento, servicos(nome, preco)"
+      "id, inicio, fim, cliente_nome, cliente_telefone, nota, estado, valor_cobrado, metodo_pagamento, motivo_cancelamento, cancelado_por, servicos(nome, preco)"
     )
     .eq("barbeiro_id", barbeiro.id)
     .gte("inicio", de)
@@ -156,6 +157,7 @@ async function Conteudo({ searchParams }: Props) {
       valorCobrado: l.valor_cobrado == null ? null : Number(l.valor_cobrado),
       metodo: l.metodo_pagamento,
       motivo: l.motivo_cancelamento,
+      canceladoPor: l.cancelado_por,
       agora: l.estado !== "cancelada" && inicio <= agora && agora < fim,
       comecou: inicio <= agora,
       passou: fim <= agora,

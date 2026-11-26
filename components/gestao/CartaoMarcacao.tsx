@@ -26,6 +26,7 @@ export type MarcacaoAgenda = {
   valorCobrado: number | null;
   metodo: "mbway" | "dinheiro" | null;
   motivo: string | null;
+  canceladoPor: "barbeiro" | "cliente" | null;
   agora: boolean; // está a decorrer neste momento
   comecou: boolean; // a hora de início já chegou
   passou: boolean; // a hora de fim já passou
@@ -99,7 +100,13 @@ export function CartaoMarcacao({ m, atraso = 0 }: { m: MarcacaoAgenda; atraso?: 
   const inativa = m.estado === "cancelada" || m.estado === "faltou";
   // Já passou e ainda não foi fechada: falta registar se foi feita ou se o cliente faltou
   const porFechar = m.passou && (m.estado === "confirmada" || m.estado === "chegou");
-  const estado = porFechar ? { texto: "POR FECHAR", classes: "border-dashed border-texto text-texto" } : ESTADOS[m.estado];
+  // Cliente avisou que não vinha: antes da hora "NÃO VEM", depois da hora "NÃO COMPARECEU"
+  const clienteNaoVem = m.estado === "cancelada" && m.canceladoPor === "cliente";
+  const estado = porFechar
+    ? { texto: "POR FECHAR", classes: "border-dashed border-texto text-texto" }
+    : clienteNaoVem
+      ? { texto: m.comecou ? "NÃO COMPARECEU" : "NÃO VEM", classes: "border-red-400/50 text-red-300" }
+      : ESTADOS[m.estado];
   const wa = m.telefoneLink ? `https://wa.me/${m.telefoneLink.replace(/\D/g, "")}` : null;
   const Pago = m.metodo ? METODOS[m.metodo] : null;
 
@@ -205,15 +212,20 @@ export function CartaoMarcacao({ m, atraso = 0 }: { m: MarcacaoAgenda; atraso?: 
         )}
 
         {(m.estado === "confirmada" || m.estado === "chegou") && painel === null && (
-          // Antes da hora: pode cancelar. Depois de começar: pode marcar que faltou.
-          <div className="grid grid-cols-[1fr_auto] gap-2 lg:grid-cols-1">
-            <button type="button" onClick={() => setPainel("concluir")} className={classesBotaoPrimario("pequeno")}>
-              CONCLUIR
-            </button>
+          // Antes da hora: só pode cancelar. Depois de começar: concluir ou marcar que faltou.
+          <div className={`grid gap-2 ${m.comecou ? "grid-cols-[1fr_auto] lg:grid-cols-1" : "grid-cols-1"}`}>
+            {m.comecou && (
+              <button type="button" onClick={() => setPainel("concluir")} className={classesBotaoPrimario("pequeno")}>
+                CONCLUIR
+              </button>
+            )}
             {m.comecou && (
               <button type="button" onClick={() => executar(() => marcarFalta(m.id))} className={botaoContorno}>
                 FALTOU
               </button>
+            )}
+            {!m.comecou && (
+              <p className="hidden text-center text-[11px] text-texto-3 lg:block">Concluir fica disponível às {m.horaInicio}.</p>
             )}
             {!m.comecou && (
               <button
@@ -277,28 +289,39 @@ export function CartaoMarcacao({ m, atraso = 0 }: { m: MarcacaoAgenda; atraso?: 
           </div>
         )}
 
-        {/* Cancelar: motivo opcional */}
+        {/* Cancelar: quem cancela + motivo opcional */}
         {painel === "cancelar" && (
-          <div className="flex flex-col gap-3 motion-safe:animate-entrar">
+          <div className="flex flex-col gap-2.5 motion-safe:animate-entrar">
             <input
               value={motivo}
               onChange={(e) => setMotivo(e.target.value)}
               maxLength={200}
               autoFocus
-              placeholder="Motivo (opcional) — ex.: mudei o horário"
+              placeholder="Motivo (opcional)"
               className="h-11 rounded border border-borda-forte bg-bg px-3 text-sm outline-none transition-colors placeholder:text-desativado focus:border-texto"
             />
-            <div className="flex items-center justify-end gap-3">
-              <button type="button" onClick={() => setPainel(null)} className="link-sublinhado text-sm text-texto-2 hover:text-texto">
-                Voltar
+            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-1">
+              <button
+                type="button"
+                disabled={aGuardar}
+                onClick={() => executar(() => cancelarMarcacao(m.id, motivo, "cliente"))}
+                className={`${botaoContorno} disabled:opacity-40`}
+              >
+                CLIENTE NÃO VEM
               </button>
               <button
                 type="button"
                 disabled={aGuardar}
-                onClick={() => executar(() => cancelarMarcacao(m.id, motivo))}
-                className="flex h-11 items-center rounded border border-red-400 px-5 text-xs font-bold tracking-[0.12em] text-red-300 transition-[background-color,color,transform] duration-200 hover:bg-red-400 hover:text-tinta active:scale-[0.96] disabled:opacity-40"
+                onClick={() => executar(() => cancelarMarcacao(m.id, motivo, "barbeiro"))}
+                className="flex h-10 items-center justify-center rounded border border-red-400 px-4 text-xs font-bold tracking-[0.12em] text-red-300 transition-[background-color,color,transform] duration-200 hover:bg-red-400 hover:text-tinta active:scale-[0.96] disabled:opacity-40 lg:h-11"
               >
-                {aGuardar ? "A CANCELAR…" : "JÁ NÃO VOU FAZER"}
+                JÁ NÃO VOU FAZER
+              </button>
+            </div>
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-[11px] leading-snug text-texto-3">A hora fica livre para outro cliente.</p>
+              <button type="button" onClick={() => setPainel(null)} className="link-sublinhado shrink-0 text-sm text-texto-2 hover:text-texto">
+                Voltar
               </button>
             </div>
           </div>

@@ -219,7 +219,8 @@ export function Agenda({ hoje, dia: diaPedido, grelha, folgas, marcacoes, erro }
           </div>
         </section>
 
-        {/* ---------- Resumo do dia ---------- */}
+        {/* ---------- Resumo do dia (não aparece em dias de folga sem marcações) ---------- */}
+        {!(diaDeFolga && ativas.length === 0) && (
         <div key={`resumo-${dia}`} className="mt-5 flex flex-col gap-3 motion-safe:animate-entrar">
           <div className="rounded-lg border border-borda bg-superficie p-4 lg:p-5">
             <div className="flex items-end justify-between gap-4">
@@ -247,7 +248,9 @@ export function Agenda({ hoje, dia: diaPedido, grelha, folgas, marcacoes, erro }
                 ? "Sem marcações."
                 : diaFechado
                   ? "Dia fechado. Bom trabalho!"
-                  : `${ativas.length - fechadas.length} por fechar`}
+                  : dia > hoje
+                    ? `${ativas.length} ${ativas.length === 1 ? "marcação" : "marcações"} por acontecer`
+                    : `${ativas.length - fechadas.length} por fechar`}
             </p>
           </div>
 
@@ -274,6 +277,7 @@ export function Agenda({ hoje, dia: diaPedido, grelha, folgas, marcacoes, erro }
             ))}
           </div>
         </div>
+        )}
       </aside>
 
       {/* ================= Marcações ================= */}

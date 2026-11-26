@@ -44,18 +44,25 @@ export async function concluirMarcacao(id: string, valor: string, metodo: string
     metodo_pagamento: metodo,
     pago_em: new Date().toISOString(),
     motivo_cancelamento: null,
+    cancelado_por: null,
   });
 }
 
 /** O cliente não apareceu */
 export async function marcarFalta(id: string): Promise<Resultado> {
-  return atualizar(id, { estado: "faltou", valor_cobrado: null, metodo_pagamento: null, pago_em: null });
+  return atualizar(id, { estado: "faltou", valor_cobrado: null, metodo_pagamento: null, pago_em: null, cancelado_por: null });
 }
 
-/** "Já não vou fazer esta marcação" */
-export async function cancelarMarcacao(id: string, motivo: string): Promise<Resultado> {
+/**
+ * Cancelar antes da hora. A hora fica livre para outro cliente.
+ *  - "barbeiro": "Já não vou fazer esta marcação"
+ *  - "cliente":  o cliente avisou que não vem
+ */
+export async function cancelarMarcacao(id: string, motivo: string, quem: "barbeiro" | "cliente"): Promise<Resultado> {
+  if (quem !== "barbeiro" && quem !== "cliente") return { erro: "Opção inválida." };
   return atualizar(id, {
     estado: "cancelada",
+    cancelado_por: quem,
     motivo_cancelamento: motivo.trim().slice(0, 200) || null,
     valor_cobrado: null,
     metodo_pagamento: null,
@@ -68,6 +75,7 @@ export async function reabrirMarcacao(id: string): Promise<Resultado> {
   return atualizar(id, {
     estado: "confirmada",
     motivo_cancelamento: null,
+    cancelado_por: null,
     valor_cobrado: null,
     metodo_pagamento: null,
     pago_em: null,
