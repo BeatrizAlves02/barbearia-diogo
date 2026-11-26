@@ -225,9 +225,6 @@ export function CartaoMarcacao({ m, atraso = 0 }: { m: MarcacaoAgenda; atraso?: 
               </button>
             )}
             {!m.comecou && (
-              <p className="hidden text-center text-[11px] text-texto-3 lg:block">Concluir fica disponível às {m.horaInicio}.</p>
-            )}
-            {!m.comecou && (
               <button
                 type="button"
                 onClick={() => setPainel("cancelar")}
