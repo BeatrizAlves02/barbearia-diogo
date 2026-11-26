@@ -47,7 +47,7 @@ export default function Inicio() {
           </p>
 
           {/* Cada linha do título sobe "de dentro" de uma máscara, uma a seguir à outra */}
-          <h1 className="mt-1 text-[42px] font-extrabold uppercase leading-[0.95] font-stretch-125% lg:mt-3 lg:text-7xl xl:text-8xl 2xl:text-9xl">
+          <h1 className="mt-1 text-[42px] font-extrabold uppercase leading-[0.95] font-stretch-125% lg:mt-3 lg:text-[min(5vw,6.25rem)]">
             {LINHAS_TITULO.map((linha, i) => (
               <span key={linha} className="-mt-[0.12em] block overflow-hidden pt-[0.12em]">
                 <span

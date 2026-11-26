@@ -52,7 +52,7 @@ function ACarregar() {
   return (
     <Moldura>
       <div className="h-18 border-b border-divisor" />
-      <div className="mt-6 flex flex-col gap-4 lg:mt-8 lg:grid lg:grid-cols-[440px_minmax(0,1fr)] lg:items-start lg:gap-12" aria-hidden="true">
+      <div className="mt-6 flex flex-col gap-4 lg:mt-8 lg:grid lg:grid-cols-[27.5rem_minmax(0,1fr)] lg:items-start lg:gap-12" aria-hidden="true">
         <div className="flex flex-col gap-4">
           <div className="h-10 w-64 rounded bg-superficie motion-safe:animate-pulse" />
           <div className="h-16 rounded-lg bg-superficie motion-safe:animate-pulse lg:h-96" />

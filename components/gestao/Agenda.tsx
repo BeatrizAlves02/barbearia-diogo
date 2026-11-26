@@ -92,7 +92,7 @@ export function Agenda({ hoje, dia: diaPedido, grelha, folgas, marcacoes, erro }
   const grelhaDoMes = grelha.filter((d) => d >= segundaDaSemana(primeiroDoMes(dia)));
 
   return (
-    <div className="lg:mt-8 lg:grid lg:grid-cols-[440px_minmax(0,1fr)] lg:items-start lg:gap-12">
+    <div className="lg:mt-8 lg:grid lg:grid-cols-[27.5rem_minmax(0,1fr)] lg:items-start lg:gap-12">
       {/* ================= Coluna do dia ================= */}
       <aside>
         <section className="mt-6 flex flex-col gap-4 motion-safe:animate-entrar lg:mt-0">

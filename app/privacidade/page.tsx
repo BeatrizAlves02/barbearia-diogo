@@ -61,9 +61,6 @@ export default function Privacidade() {
         </section>
       </div>
 
-      <Link href="/marcar" className="link-sublinhado mt-10 inline-block text-sm font-bold">
-        ← Voltar à marcação
-      </Link>
 
       <Suspense>
         <SegurancaCliente />

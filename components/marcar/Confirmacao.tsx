@@ -44,7 +44,7 @@ export function Confirmacao({ servico, inicio, linkCalendario }: Props) {
   ];
 
   return (
-    <main className="mx-auto flex min-h-dvh max-w-md flex-col px-5 pb-10 pt-6 lg:max-w-6xl lg:px-10 lg:pt-8">
+    <main className="mx-auto flex min-h-dvh max-w-md flex-col px-5 pb-10 pt-6 lg:pt-8 lg:max-w-7xl lg:px-10 xl:max-w-[1440px] xl:px-14 2xl:max-w-[1680px]">
       {/* Topo: logo com o nome, como no resto do site */}
       <header className="flex justify-center motion-safe:animate-entrar lg:justify-start">
         <Link href="/" aria-label="Diogo Pimenta — início" className="flex items-center gap-3.5 transition-[opacity,transform] hover:opacity-80 active:scale-95">
@@ -56,7 +56,7 @@ export function Confirmacao({ servico, inicio, linkCalendario }: Props) {
         </Link>
       </header>
 
-      <div className="flex flex-1 flex-col gap-10 pt-10 lg:grid lg:grid-cols-[minmax(0,1fr)_420px] lg:items-center lg:gap-20 lg:pt-0">
+      <div className="flex flex-1 flex-col gap-10 pt-10 lg:grid lg:grid-cols-[minmax(0,1fr)_26rem] lg:items-center lg:gap-20 lg:pt-0 xl:grid-cols-[minmax(0,1fr)_30rem] xl:gap-28">
         {/* ---------- Mensagem ---------- */}
         <section className="flex flex-col items-center text-center lg:items-start lg:text-left">
           <div className="flex items-center gap-3">
@@ -68,7 +68,7 @@ export function Confirmacao({ servico, inicio, linkCalendario }: Props) {
 
           <h1
             style={{ animationDelay: "250ms" }}
-            className="mt-6 text-[40px] font-extrabold uppercase leading-[0.95] font-stretch-125% motion-safe:animate-entrar lg:text-7xl"
+            className="mt-6 text-[40px] font-extrabold uppercase leading-[0.95] font-stretch-125% motion-safe:animate-entrar lg:text-7xl xl:text-8xl"
           >
             Está
             <br />
