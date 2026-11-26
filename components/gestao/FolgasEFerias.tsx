@@ -40,13 +40,31 @@ export function FolgasEFerias({
   const [erro, setErro] = useState<string | null>(null);
   const [aGuardar, iniciar] = useTransition();
 
+  // Horário "normal" (o mais comum na semana) → usado para abrir um dia todo sem ter de escolher horas
+  const normal = (() => {
+    const contagem = new Map<string, { n: number; t: TurnoSemanal }>();
+    for (const t of semanal)
+      if (t.aberto && t.abre && t.fecha) {
+        const k = `${curta(t.abre)}|${curta(t.fecha)}|${curta(t.pausa_inicio)}|${curta(t.pausa_fim)}`;
+        contagem.set(k, { n: (contagem.get(k)?.n ?? 0) + 1, t });
+      }
+    const t = [...contagem.values()].sort((a, b) => b.n - a.n)[0]?.t;
+    return {
+      aberto: true,
+      abre: curta(t?.abre ?? null) ?? "09:00",
+      fecha: curta(t?.fecha ?? null) ?? "19:00",
+      pausa_inicio: curta(t?.pausa_inicio ?? null),
+      pausa_fim: curta(t?.pausa_fim ?? null),
+    };
+  })();
+
   const escolha: Escolha = abrir ? (soHoras ? "abrirHoras" : "abrirDia") : soHoras ? "fecharHoras" : "fecharDia";
   const n = dias.length;
   const nesses = n > 1 ? "nestes dias" : "neste dia";
   const ajuda: Record<Escolha, string> = {
     fecharDia: `Ninguém pode marcar ${nesses}.`,
     fecharHoras: "Ninguém pode marcar entre estas horas. O resto do dia fica normal.",
-    abrirDia: `Abres ${nesses} a estas horas.`,
+    abrirDia: `Abres ${nesses} com o teu horário normal (${normal.abre} às ${normal.fecha}).`,
     abrirHoras: "Estas horas juntam-se ao horário que já tens nesse dia.",
   };
 
@@ -75,10 +93,6 @@ export function FolgasEFerias({
     const ficam = dias.filter((d) => serve(nova, d));
     setDias(ficam);
     if (nova === "abrirHoras" && ficam.length) horasAMaisDe(ficam[0]);
-    if (nova === "abrirDia" && escolha === "abrirHoras") {
-      setAbre("09:00");
-      setFecha("19:00");
-    }
   }
 
   // ABRIR: como fica cada dia escolhido
@@ -95,7 +109,9 @@ export function FolgasEFerias({
             buraco: j.buraco,
           };
         }
-        const turno = { aberto: true, abre, fecha: normalizar(fecha), pausa_inicio: null, pausa_fim: null };
+        // abrir o dia todo → horário normal; horas a mais num dia fechado → só essas horas
+        const turno =
+          escolha === "abrirDia" ? normal : { aberto: true, abre, fecha: normalizar(fecha), pausa_inicio: null, pausa_fim: null };
         return { dia: d, fica: `${turno.abre} – ${turno.fecha}`, turno, buraco: null as [string, string] | null };
       })
     : [];
@@ -225,9 +241,9 @@ export function FolgasEFerias({
           </label>
         )}
 
-        {abrir && (
+        {escolha === "abrirHoras" && (
           <div className="flex flex-col gap-1.5 motion-safe:animate-entrar">
-            {escolha === "abrirHoras" && <span className="text-[10px] tracking-[0.22em] text-texto-3">HORAS A MAIS</span>}
+            <span className="text-[10px] tracking-[0.22em] text-texto-3">HORAS A MAIS</span>
             <div className="flex flex-wrap items-center gap-2">
               <span className={rotuloHora}>DAS</span>
               <SeletorHora rotulo="Abre às" valor={abre} min={paraHora(ABRE_MIN)} max="23:30" onMudar={(h) => { setAbre(h); if (minutos(fecha) < minutos(h)) setFecha(h); }} />
@@ -239,11 +255,11 @@ export function FolgasEFerias({
 
         <p key={`${escolha}${n > 1}`} className="text-sm text-texto-2 motion-safe:animate-entrar">
           {ajuda[escolha]}
-          {abrir && " A segunda hora é a da última marcação."}
+          {escolha === "abrirHoras" && " A segunda hora é a da última marcação."}
         </p>
 
         {/* Como vai ficar cada dia (texto simples) */}
-        {abrir && planos.length > 0 && (
+        {escolha === "abrirHoras" && planos.length > 0 && (
           <div className="flex flex-col gap-0.5 text-sm text-texto-3 motion-safe:animate-entrar">
             {planos.slice(0, 4).map((p) => (
               <span key={p.dia} className="tabular-nums">
