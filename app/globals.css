@@ -33,6 +33,9 @@
     from { opacity: 0; transform: translateY(12px); }
   }
   /* barra que se enche da esquerda para a direita */
+  @keyframes crescer {
+    from { transform: scaleY(0); }
+  }
   @keyframes encher {
     from { transform: scaleX(0); }
   }
