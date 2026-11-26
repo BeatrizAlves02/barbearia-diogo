@@ -36,7 +36,7 @@ export function DiasEspeciais({ lista, hoje }: { lista: TurnoEspecial[]; hoje: s
     <section style={{ animationDelay: "80ms" }} className="rounded-lg border border-borda bg-superficie motion-safe:animate-entrar">
       <div className="flex flex-col gap-1 border-b border-borda p-5 lg:p-6">
         <h2 className="text-sm font-extrabold tracking-[0.16em] font-stretch-125%">DIAS ESPECIAIS</h2>
-        <p className="text-sm text-texto-3">Abrir num dia de folga, fechar um dia ou mudar só o horário desse dia.</p>
+        <p className="text-sm text-texto-3">Muda o horário só de um dia.</p>
       </div>
 
       <div className="flex flex-col gap-4 p-5 lg:p-6">

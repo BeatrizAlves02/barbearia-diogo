@@ -79,7 +79,11 @@ export function HorarioHabitual({ inicial }: { inicial: TurnoSemanal[] }) {
     <section className="rounded-lg border border-borda bg-superficie motion-safe:animate-entrar">
       <div className="flex flex-col gap-1 border-b border-borda p-5 lg:p-6">
         <h2 className="text-sm font-extrabold tracking-[0.16em] font-stretch-125%">HORÁRIO HABITUAL</h2>
-        <p className="text-sm text-texto-3">Hora de abrir – hora da última marcação (pode acabar depois). Vale para todas as semanas; para mudar só um dia, usa os dias especiais.</p>
+        <p className="text-sm text-texto-3">
+          Hora de abrir – hora da última marcação.
+          <br />
+          <strong className="font-bold text-texto-2">Vale para todas as semanas.</strong>
+        </p>
       </div>
 
       <ul className="divide-y divide-borda">

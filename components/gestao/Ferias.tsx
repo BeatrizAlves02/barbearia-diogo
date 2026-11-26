@@ -32,7 +32,7 @@ export function Ferias({ lista, hoje }: { lista: Bloqueio[]; hoje: string }) {
     <section style={{ animationDelay: "160ms" }} className="rounded-lg border border-borda bg-superficie motion-safe:animate-entrar">
       <div className="flex flex-col gap-1 border-b border-borda p-5 lg:p-6">
         <h2 className="text-sm font-extrabold tracking-[0.16em] font-stretch-125%">FÉRIAS</h2>
-        <p className="text-sm text-texto-3">Nesses dias ninguém consegue marcar.</p>
+        <p className="text-sm text-texto-3">Ninguém pode marcar nestes dias.</p>
       </div>
 
       <div className="flex flex-col gap-4 p-5 lg:p-6">

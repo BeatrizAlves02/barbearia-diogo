@@ -93,13 +93,9 @@ async function Conteudo() {
           className="mt-6 rounded-lg border border-red-400/50 bg-red-400/10 p-5 motion-safe:animate-entrar lg:p-6"
         >
           <h2 className="text-sm font-bold text-red-200">
-            {conflitos.length === 1
-              ? "1 marcação fica fora do horário"
-              : `${conflitos.length} marcações ficam fora do horário`}
+            {conflitos.length === 1 ? "1 marcação para rever" : `${conflitos.length} marcações para rever`}
           </h2>
-          <p className="mt-1 text-sm text-texto-2">
-            Continuam marcadas. Abre a agenda para manter ou carregar em “Cancelar → Já não vou fazer”.
-          </p>
+          <p className="mt-1 text-sm text-texto-2">Já não batem com o horário, mas continuam marcadas.</p>
           <ul className="mt-4 flex flex-col gap-2">
             {conflitos.map((m) => (
               <li key={m.id}>
@@ -107,14 +103,15 @@ async function Conteudo() {
                   href={`/gestao?dia=${m.dia}`}
                   className="group flex items-center justify-between gap-3 rounded border border-red-400/30 bg-bg/50 px-4 py-3 transition-[border-color,background-color,transform] hover:border-red-300 hover:bg-bg active:scale-[0.99]"
                 >
-                  <span className="flex flex-col">
+                  <span className="flex min-w-0 flex-col">
                     <span className="text-[15px] font-bold">
-                      {formatarDiaCurto(m.dia)} · {horaEmLisboa(m.inicio)} · {m.cliente_nome}
+                      {formatarDiaCurto(m.dia)} · {horaEmLisboa(m.inicio)}
                     </span>
-                    <span className="text-xs text-red-300">{m.motivo}</span>
+                    <span className="truncate text-sm text-texto-3">{m.cliente_nome}</span>
                   </span>
-                  <span className="shrink-0 text-[11px] font-bold tracking-[0.14em] text-texto-2 transition-transform group-hover:translate-x-1">
-                    VER →
+                  <span className="flex shrink-0 items-center gap-3">
+                    <span className="rounded-full bg-red-400/15 px-2.5 py-1 text-[11px] font-bold whitespace-nowrap text-red-200">{m.motivo}</span>
+                    <span className="text-[11px] font-bold tracking-[0.14em] text-texto-2 transition-transform group-hover:translate-x-1">VER →</span>
                   </span>
                 </Link>
               </li>
