@@ -45,7 +45,7 @@ function telefone(numero: string | null) {
 }
 
 function Moldura({ children }: { children: React.ReactNode }) {
-  return <main className="mx-auto min-h-dvh max-w-2xl px-5 pb-16 lg:max-w-7xl lg:px-10">{children}</main>;
+  return <main className="mx-auto min-h-dvh max-w-2xl px-5 pb-16 lg:max-w-7xl lg:px-10 xl:max-w-[1440px] xl:px-14 2xl:max-w-[1680px]">{children}</main>;
 }
 
 function ACarregar() {

@@ -47,13 +47,13 @@ export function Confirmacao({ servico, inicio, linkCalendario }: Props) {
     <main className="mx-auto flex min-h-dvh max-w-md flex-col px-5 pb-10 pt-6 lg:pt-8 lg:max-w-7xl lg:px-10 xl:max-w-[1440px] xl:px-14 2xl:max-w-[1680px]">
       {/* Topo: logo com o nome, como no resto do site */}
       <header className="flex justify-center motion-safe:animate-entrar lg:justify-start">
-        <Link href="/" aria-label="Diogo Pimenta — início" className="flex items-center gap-3.5 transition-[opacity,transform] hover:opacity-80 active:scale-95">
+        <a href="/" aria-label="Diogo Pimenta — início" className="flex items-center gap-3.5 transition-[opacity,transform] hover:opacity-80 active:scale-95">
           <Image src="/logo.svg" alt="" width={42} height={48} priority />
           <span className="flex flex-col gap-1">
             <span className="text-base font-bold tracking-[0.3em] font-stretch-125%">DIOGO PIMENTA</span>
             <span className="text-[10px] tracking-[0.3em] text-texto-2">BARBERSHOP · EST. 2020</span>
           </span>
-        </Link>
+        </a>
       </header>
 
       <div className="flex flex-1 flex-col gap-10 pt-10 lg:grid lg:grid-cols-[minmax(0,1fr)_26rem] lg:items-center lg:gap-20 lg:pt-0 xl:grid-cols-[minmax(0,1fr)_30rem] xl:gap-28">

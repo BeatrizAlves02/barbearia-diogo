@@ -1,5 +1,4 @@
 import { Suspense } from "react";
-import Link from "next/link";
 import { SegurancaCliente } from "@/components/SegurancaCliente";
 import { Marca } from "@/components/Marca";
 import { TELEFONE_TEXTO } from "@/lib/contactos";
@@ -13,9 +12,9 @@ export const metadata = { title: "Política de privacidade — Diogo Pimenta Bar
 export default function Privacidade() {
   return (
     <main className="mx-auto max-w-2xl px-5 pb-16 pt-8 lg:pt-14">
-      <Link href="/" aria-label="Diogo Pimenta — início">
+      <a href="/" aria-label="Diogo Pimenta — início" className="inline-block transition-[opacity,transform] hover:opacity-80 active:scale-95">
         <Marca />
-      </Link>
+      </a>
 
       <h1 className="mt-10 text-[30px] font-extrabold uppercase leading-none font-stretch-125% lg:text-5xl">
         Política de privacidade

@@ -18,9 +18,9 @@ export function TopoPasso({ passo, voltar }: Props) {
           <IconeVoltar />
         </Link>
         <span className="text-[11px] tracking-[0.24em] text-texto-3">PASSO {passo} DE {ETAPAS.length}</span>
-        <Link href="/" aria-label="Diogo Pimenta — início" className="flex size-11 items-center justify-center transition-opacity hover:opacity-70">
+        <a href="/" aria-label="Diogo Pimenta — início" className="flex size-11 items-center justify-center transition-opacity hover:opacity-70">
           <Image src="/logo.svg" alt="" width={26} height={30} />
-        </Link>
+        </a>
       </div>
 
       <ol className="grid grid-cols-3 gap-1.5" aria-label="Passos da marcação">

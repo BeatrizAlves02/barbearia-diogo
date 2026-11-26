@@ -34,7 +34,9 @@ export default function Inicio() {
 
         {/* Topo — só no telemóvel */}
         <header className="absolute inset-x-5 top-4 flex items-center justify-between motion-safe:animate-descer lg:hidden">
-          <Marca />
+          <a href="/" aria-label="Diogo Pimenta — início (recarregar)" className="transition-[opacity,transform] active:scale-95 active:opacity-80">
+            <Marca />
+          </a>
         </header>
 
         {/* Texto */}

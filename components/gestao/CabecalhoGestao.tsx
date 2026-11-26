@@ -1,5 +1,4 @@
 import Image from "next/image";
-import Link from "next/link";
 import { sair } from "@/app/gestao/actions";
 import { AtualizacaoAutomatica } from "./AtualizacaoAutomatica";
 
@@ -7,13 +6,13 @@ import { AtualizacaoAutomatica } from "./AtualizacaoAutomatica";
 export function CabecalhoGestao({ nome }: { nome: string }) {
   return (
     <header className="flex items-center justify-between border-b border-divisor py-4 motion-safe:animate-descer">
-      <Link href="/gestao" className="flex items-center gap-3 transition-opacity hover:opacity-80">
+      <a href="/gestao" aria-label="Gestão — recarregar a agenda de hoje" className="flex items-center gap-3 transition-[opacity,transform] hover:opacity-80 active:scale-95">
         <Image src="/logo.svg" alt="" width={28} height={32} />
         <span className="flex flex-col gap-0.5">
           <span className="text-sm font-extrabold tracking-[0.2em] font-stretch-125%">GESTÃO</span>
           <span className="whitespace-nowrap text-[10px] tracking-[0.2em] text-texto-3">{nome.toUpperCase()}</span>
         </span>
-      </Link>
+      </a>
       <div className="flex items-center gap-2">
       <AtualizacaoAutomatica />
       <form action={sair}>
