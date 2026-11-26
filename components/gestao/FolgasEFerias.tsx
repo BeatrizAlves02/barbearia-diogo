@@ -43,7 +43,7 @@ export function FolgasEFerias({
   const ajuda: Record<Escolha, string> = {
     dia: `Ninguém pode marcar ${nesses}.`,
     horas: `Ninguém pode marcar entre estas horas. O resto do dia fica normal.`,
-    aberto: "Num dia aberto, estas horas são acrescentadas às que já tens. Numa folga, abres a estas horas.",
+    aberto: "",
   };
 
   // O Diogo trabalha nesse dia? (horário habitual + dias mudados + feriados + férias de dia inteiro)
@@ -72,7 +72,8 @@ export function FolgasEFerias({
             return {
               dia: d,
               antes: `${curta(t.abre)} – ${curta(t.fecha)}`,
-              depois: `${j.turno.abre} – ${j.turno.fecha}`,
+              // com intervalo pelo meio: "09:00 – 19:00 · 23:00 – 03:00"
+              depois: j.buraco ? `${curta(t.abre)} – ${curta(t.fecha)} · ${abre} – ${normalizar(fecha)}` : `${j.turno.abre} – ${j.turno.fecha}`,
               turno: j.turno,
               buraco: j.buraco,
             };
@@ -82,7 +83,6 @@ export function FolgasEFerias({
         })
       : [];
   const todosAbertos = planos.length > 0 && planos.every((p) => p.antes);
-  const buraco = planos.find((p) => p.buraco)?.buraco;
 
   function guardar() {
     setErro(null);
@@ -240,13 +240,8 @@ export function FolgasEFerias({
             {planos.length > 4 && <li className="px-4 py-2.5 text-texto-3">e mais {planos.length - 4} dias…</li>}
           </ul>
         )}
-        {aberto && buraco && (
-          <p className="text-sm text-texto-2 motion-safe:animate-entrar">
-            Entre as {buraco[0]} e as {buraco[1]} fica fechado (ninguém marca nesse intervalo).
-          </p>
-        )}
 
-        <p key={`${escolha}${n > 1}`} className="text-sm text-texto-2 motion-safe:animate-entrar">{ajuda[escolha]}</p>
+        {ajuda[escolha] && <p key={`${escolha}${n > 1}`} className="text-sm text-texto-2 motion-safe:animate-entrar">{ajuda[escolha]}</p>}
 
         {erro && <p className="text-sm text-red-400">{erro}</p>}
         <button

@@ -79,10 +79,11 @@ export function Agenda({ hoje, dia: diaPedido, grelha, folgas, feriados, marcaco
   const doDia = porDia.get(dia) ?? [];
   const ativas = doDia.filter((m) => m.estado !== "cancelada");
   const concluidas = ativas.filter((m) => m.estado === "concluida");
-  const fechadas = ativas.filter((m) => m.estado === "concluida" || m.estado === "faltou");
+  // Fechadas = já resolvidas (concluída, faltou ou cancelada), de todas as do dia
+  const fechadas = doDia.filter((m) => m.estado === "concluida" || m.estado === "faltou" || m.estado === "cancelada");
   const faltaram = ativas.filter((m) => m.estado === "faltou").length;
   const canceladas = doDia.length - ativas.length;
-  const porFazer = ativas.length - fechadas.length;
+  const porFazer = doDia.length - fechadas.length;
   // Ex.: "4 concluídas · 1 faltou · 2 canceladas · 1 por fazer" (só o que existe)
   const contagem = [
     concluidas.length && `${concluidas.length} ${concluidas.length === 1 ? "concluída" : "concluídas"}`,
@@ -95,7 +96,7 @@ export function Agenda({ hoje, dia: diaPedido, grelha, folgas, feriados, marcaco
   const faturado = soma();
   const mbway = soma("mbway");
   const dinheiro = soma("dinheiro");
-  const progresso = ativas.length ? Math.round((fechadas.length / ativas.length) * 100) : 0;
+  const progresso = doDia.length ? Math.round((fechadas.length / doDia.length) * 100) : 0;
   const diaFechado = resumo(dia).fechado;
   const diaDeFolga = diasDeFolga.has(dia);
 
@@ -243,7 +244,7 @@ export function Agenda({ hoje, dia: diaPedido, grelha, folgas, feriados, marcaco
                 <span className="text-[9px] tracking-[0.2em] text-texto-3">FECHADAS</span>
                 <span className="flex items-center gap-1.5 text-xl font-extrabold tabular-nums font-stretch-125%">
                   {diaFechado && <IconeVisto className="size-4" />}
-                  {fechadas.length}/{ativas.length}
+                  {fechadas.length}/{doDia.length}
                 </span>
               </div>
             </div>
@@ -263,12 +264,7 @@ export function Agenda({ hoje, dia: diaPedido, grelha, folgas, feriados, marcaco
                   ? "Dia fechado. Bom trabalho!"
                   : dia > hoje
                     ? `${ativas.length} ${ativas.length === 1 ? "marcação" : "marcações"} por acontecer`
-                    : `${ativas.length - fechadas.length} por fechar`}
-              {canceladas > 0 && ativas.length > 0 && (
-                <span className="text-texto-3/70">
-                  {" "}· {canceladas === 1 ? "A cancelada não conta." : `As ${canceladas} canceladas não contam.`}
-                </span>
-              )}
+                    : `${porFazer} por fechar`}
             </p>
           </div>
 
