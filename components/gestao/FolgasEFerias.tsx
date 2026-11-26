@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { adicionarFerias, apagarDiaEspecial, apagarFerias, fecharHorasVarios, guardarHorariosDosDias } from "@/app/gestao/horario/actions";
 import { classesBotaoPrimario } from "@/components/BotaoPrimario";
 import { formatarHora } from "@/lib/formatar";
@@ -35,10 +35,24 @@ export function FolgasEFerias({
   const abrir = tipo === "abrir";
   const [soHoras, setSoHoras] = useState(false);
   const [mensagem, setMensagem] = useState("");
-  const [de, setDe] = useState("14:00"); // fechar umas horas
-  const [ate, setAte] = useState("16:00");
-  const [abre, setAbre] = useState("09:00"); // abrir (dia todo ou horas a mais)
-  const [fecha, setFecha] = useState("19:00");
+  const [deSel, setDe] = useState("14:00"); // fechar umas horas
+  const [ateSel, setAte] = useState("16:00");
+  const [abreSel, setAbre] = useState("09:00"); // horas a mais
+  const [fechaSel, setFecha] = useState("19:00");
+
+  // Hora atual em Lisboa (em minutos), atualizada a cada minuto → hoje não se escolhem horas que já passaram
+  const [agora, setAgora] = useState<number | null>(null);
+  useEffect(() => {
+    const ver = () => setAgora(minutos(horaEmLisboa(new Date().toISOString())));
+    const primeiro = setTimeout(ver, 0);
+    const id = setInterval(ver, 60_000);
+    return () => {
+      clearTimeout(primeiro);
+      clearInterval(id);
+    };
+  }, []);
+  // próxima meia hora a partir de agora (ex.: 23:53 → 00:00 = 24:00)
+  const proximaHoje = agora === null ? 0 : Math.ceil((agora + 1) / 30) * 30;
   const [erro, setErro] = useState<string | null>(null);
   const [aGuardar, iniciar] = useTransition();
 
@@ -60,6 +74,16 @@ export function FolgasEFerias({
     };
   })();
 
+  const temHoje = dias.includes(hoje);
+  const minFechar = temHoje ? Math.max(ABRE_MIN, proximaHoje) : ABRE_MIN;
+  const minAbrir = temHoje ? Math.max(ABRE_MIN, proximaHoje) : ABRE_MIN;
+  // valores usados (nunca antes do mínimo)
+  const de = paraHora(Math.max(minutos(deSel), minFechar));
+  const ate = paraHora(Math.max(minutos(ateSel), minutos(de) + 30));
+  const abre = paraHora(Math.max(minutos(abreSel), minAbrir));
+  const fecha = paraHora(Math.max(minutos(fechaSel), minutos(abre)));
+  const avisoHoje = temHoje && agora !== null && proximaHoje > ABRE_MIN ? `Hoje só a partir das ${normalizar(paraHora(proximaHoje))}.` : null;
+
   const escolha: Escolha = abrir ? (soHoras ? "abrirHoras" : "abrirDia") : soHoras ? "fecharHoras" : "fecharDia";
   const n = dias.length;
   const nesses = n > 1 ? "nestes dias" : "neste dia";
@@ -74,7 +98,10 @@ export function FolgasEFerias({
   const deFerias = (d: string) => bloqueios.some((b) => diaInteiro(b) && diaEmLisboa(b.inicio) <= d && d < diaEmLisboa(b.fim));
   const trabalha = (d: string) => turnoDoDia(d, semanal, especiais).aberto && !deFerias(d);
   // Só se escolhem os dias que fazem sentido (os de férias, para abrir, apagam-se primeiro na lista)
-  const serve = (e: Escolha, d: string) => (e === "abrirDia" ? !trabalha(d) && !deFerias(d) : trabalha(d));
+  const serve = (e: Escolha, d: string) =>
+    e === "abrirDia"
+      ? !trabalha(d) && !deFerias(d)
+      : trabalha(d) && !(e === "fecharHoras" && d === hoje && proximaHoje > 23 * 60 + 30);
 
   /** Horas a mais: começam logo a seguir à última marcação desse dia (ex.: 19:00 → das 20:00 às 21:00) */
   function horasAMaisDe(d: string) {
@@ -105,7 +132,7 @@ export function FolgasEFerias({
           return {
             dia: d,
             // com intervalo pelo meio: "09:00 – 19:00 e 23:00 – 03:00"
-            fica: j.buraco ? `${curta(t.abre)} – ${curta(t.fecha)} e ${abre} – ${normalizar(fecha)}` : `${j.turno.abre} – ${j.turno.fecha}`,
+            fica: j.buraco ? `${curta(t.abre)} – ${curta(t.fecha)} e ${normalizar(abre)} – ${normalizar(fecha)}` : `${j.turno.abre} – ${j.turno.fecha}`,
             turno: j.turno,
             buraco: j.buraco,
           };
@@ -217,7 +244,7 @@ export function FolgasEFerias({
         {escolha === "fecharHoras" && (
           <div className="flex flex-wrap items-center gap-2 motion-safe:animate-entrar">
             <span className={rotuloHora}>DAS</span>
-            <SeletorHora rotulo="Fechado das" valor={de} min={paraHora(ABRE_MIN)} max="23:30" onMudar={(h) => { setDe(h); if (minutos(ate) <= minutos(h)) setAte(paraHora(minutos(h) + 30)); }} />
+            <SeletorHora rotulo="Fechado das" valor={de} min={paraHora(minFechar)} max="23:30" onMudar={(h) => { setDe(h); if (minutos(ate) <= minutos(h)) setAte(paraHora(minutos(h) + 30)); }} />
             <span className={`${rotuloHora} w-auto px-1`}>ÀS</span>
             <SeletorHora rotulo="Fechado até às" valor={ate} min={paraHora(minutos(de) + 30)} max="24:00" onMudar={setAte} />
           </div>
@@ -240,11 +267,15 @@ export function FolgasEFerias({
           <div className="flex flex-col gap-1.5 motion-safe:animate-entrar">
             <div className="flex flex-wrap items-center gap-2">
               <span className={rotuloHora}>DAS</span>
-              <SeletorHora rotulo="Abre às" valor={abre} min={paraHora(ABRE_MIN)} max="23:30" onMudar={(h) => { setAbre(h); if (minutos(fecha) < minutos(h)) setFecha(h); }} />
+              <SeletorHora rotulo="Abre às" valor={abre} min={paraHora(minAbrir)} max={paraHora(ULTIMA_MAX)} onMudar={(h) => { setAbre(h); if (minutos(fecha) < minutos(h)) setFecha(h); }} />
               <span className={`${rotuloHora} w-auto px-1`}>ÀS</span>
               <SeletorHora rotulo="Última marcação às" valor={fecha} min={abre} max={paraHora(ULTIMA_MAX)} onMudar={setFecha} />
             </div>
           </div>
+        )}
+
+        {avisoHoje && (escolha === "fecharHoras" || escolha === "abrirHoras") && (
+          <p className="-mt-2 text-xs text-texto-3 motion-safe:animate-entrar">{avisoHoje}</p>
         )}
 
         <p key={`${escolha}${n > 1}`} className="text-sm text-texto-2 motion-safe:animate-entrar">
