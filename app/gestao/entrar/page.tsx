@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Image from "next/image";
 import { FormularioEntrar } from "@/components/gestao/FormularioEntrar";
 
@@ -12,7 +13,9 @@ export default function EntrarPagina() {
         </div>
       </div>
 
-      <FormularioEntrar />
+      <Suspense>
+        <FormularioEntrar />
+      </Suspense>
     </main>
   );
 }

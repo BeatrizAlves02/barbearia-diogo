@@ -87,3 +87,10 @@ export async function sair() {
   await supabase.auth.signOut();
   redirect("/gestao/entrar");
 }
+
+/** Saída automática por estar muito tempo sem mexer na app */
+export async function sairPorInatividade() {
+  const { supabase } = await barbeiroComSessao();
+  await supabase.auth.signOut();
+  redirect("/gestao/entrar?motivo=inatividade");
+}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { entrar, type EstadoEntrar } from "@/app/gestao/entrar/actions";
 import { classesBotaoPrimario } from "@/components/BotaoPrimario";
 
@@ -10,9 +11,16 @@ const campo =
 export function FormularioEntrar() {
   const [estado, acao, aEnviar] = useActionState<EstadoEntrar, FormData>(entrar, {});
   const [ver, setVer] = useState(false);
+  const porInatividade = useSearchParams().get("motivo") === "inatividade" && !estado.erro;
 
   return (
     <form action={acao} style={{ animationDelay: "120ms" }} className="mt-10 flex flex-col gap-4 motion-safe:animate-entrar">
+      {porInatividade && (
+        <p className="rounded border border-borda-forte bg-superficie px-4 py-3 text-sm text-texto-2 motion-safe:animate-entrar">
+          Por segurança, saíste automaticamente depois de algum tempo sem usar a app. Entra outra vez.
+        </p>
+      )}
+
       <div className="flex flex-col gap-2">
         <label htmlFor="email" className="text-[10px] tracking-[0.22em] text-texto-3">
           EMAIL
