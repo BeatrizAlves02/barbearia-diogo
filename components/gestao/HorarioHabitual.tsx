@@ -44,7 +44,7 @@ export function HorarioHabitual({ inicial }: { inicial: TurnoSemanal[] }) {
         if (l.dia_semana !== dia) return l;
         const n = { ...l, ...alteracao };
         // mantém as horas sempre coerentes enquanto se carrega nos botões
-        if (minutos(n.fecha) <= minutos(n.abre)) n.fecha = paraHora(Math.min(1440, minutos(n.abre) + 30));
+        if (minutos(n.fecha) < minutos(n.abre)) n.fecha = n.abre;
         if (n.pausa) {
           if (minutos(n.pausa_inicio) <= minutos(n.abre)) n.pausa_inicio = paraHora(minutos(n.abre) + 30);
           if (minutos(n.pausa_fim) <= minutos(n.pausa_inicio)) n.pausa_fim = paraHora(minutos(n.pausa_inicio) + 30);
@@ -79,7 +79,7 @@ export function HorarioHabitual({ inicial }: { inicial: TurnoSemanal[] }) {
     <section className="rounded-lg border border-borda bg-superficie motion-safe:animate-entrar">
       <div className="flex flex-col gap-1 border-b border-borda p-5 lg:p-6">
         <h2 className="text-sm font-extrabold tracking-[0.16em] font-stretch-125%">HORÁRIO HABITUAL</h2>
-        <p className="text-sm text-texto-3">Vale para todas as semanas. Para mudar só um dia, usa os dias especiais.</p>
+        <p className="text-sm text-texto-3">Hora de abrir – hora da última marcação (pode acabar depois). Vale para todas as semanas; para mudar só um dia, usa os dias especiais.</p>
       </div>
 
       <ul className="divide-y divide-borda">
@@ -93,9 +93,9 @@ export function HorarioHabitual({ inicial }: { inicial: TurnoSemanal[] }) {
 
               {l.aberto ? (
                 <div className="flex flex-wrap items-center gap-2 motion-safe:animate-entrar">
-                  <SeletorHora rotulo={`${NOMES[l.dia_semana]}: abre`} valor={l.abre} max="23:30" onMudar={(h) => mudar(l.dia_semana, { abre: h })} />
+                  <SeletorHora rotulo={`${NOMES[l.dia_semana]}: abre`} valor={l.abre} max="23:00" onMudar={(h) => mudar(l.dia_semana, { abre: h })} />
                   <span className="text-texto-3">–</span>
-                  <SeletorHora rotulo={`${NOMES[l.dia_semana]}: fecha`} valor={l.fecha} min={paraHora(minutos(l.abre) + 30)} onMudar={(h) => mudar(l.dia_semana, { fecha: h })} />
+                  <SeletorHora rotulo={`${NOMES[l.dia_semana]}: última marcação`} valor={l.fecha} min={l.abre} onMudar={(h) => mudar(l.dia_semana, { fecha: h })} />
                   {!l.pausa && (
                     <button
                       type="button"
@@ -124,9 +124,9 @@ export function HorarioHabitual({ inicial }: { inicial: TurnoSemanal[] }) {
                     TIRAR
                   </button>
                 </span>
-                <SeletorHora rotulo={`${NOMES[l.dia_semana]}: pausa começa`} valor={l.pausa_inicio} min={paraHora(minutos(l.abre) + 30)} max={paraHora(minutos(l.fecha) - 60)} onMudar={(h) => mudar(l.dia_semana, { pausa_inicio: h })} />
+                <SeletorHora rotulo={`${NOMES[l.dia_semana]}: pausa começa`} valor={l.pausa_inicio} min={paraHora(minutos(l.abre) + 30)} max={paraHora(minutos(l.fecha) - 30)} onMudar={(h) => mudar(l.dia_semana, { pausa_inicio: h })} />
                 <span className="text-texto-3">–</span>
-                <SeletorHora rotulo={`${NOMES[l.dia_semana]}: pausa acaba`} valor={l.pausa_fim} min={paraHora(minutos(l.pausa_inicio) + 30)} max={paraHora(minutos(l.fecha) - 30)} onMudar={(h) => mudar(l.dia_semana, { pausa_fim: h })} />
+                <SeletorHora rotulo={`${NOMES[l.dia_semana]}: pausa acaba`} valor={l.pausa_fim} min={paraHora(minutos(l.pausa_inicio) + 30)} max={l.fecha} onMudar={(h) => mudar(l.dia_semana, { pausa_fim: h })} />
                 <button
                   type="button"
                   aria-label="Tirar pausa"

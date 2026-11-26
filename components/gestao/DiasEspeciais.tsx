@@ -5,8 +5,8 @@ import { apagarDiaEspecial, guardarDiaEspecial } from "@/app/gestao/horario/acti
 import { classesBotaoPrimario } from "@/components/BotaoPrimario";
 import { formatarHora } from "@/lib/formatar";
 import { formatarDiaCurto } from "@/lib/datas";
-import { curta, minutos, paraHora, type TurnoEspecial } from "@/lib/horarios";
-import { Alternador, CampoData, SeletorHora } from "./ControlosHorario";
+import { curta, minutos, type TurnoEspecial } from "@/lib/horarios";
+import { Alternador, SeletorData, SeletorHora } from "./ControlosHorario";
 
 /** Dias com horário diferente do habitual: abrir numa folga, fechar um dia, ou mudar as horas */
 export function DiasEspeciais({ lista, hoje }: { lista: TurnoEspecial[]; hoje: string }) {
@@ -40,7 +40,7 @@ export function DiasEspeciais({ lista, hoje }: { lista: TurnoEspecial[]; hoje: s
       </div>
 
       <div className="flex flex-col gap-4 p-5 lg:p-6">
-        <CampoData rotulo="DIA" valor={dia} min={hoje} onMudar={setDia} />
+        <SeletorData modo="dia" rotulo="DIA" valor={dia} min={hoje} onMudar={setDia} />
         <Alternador
           valor={modo}
           onMudar={setModo}
@@ -51,9 +51,9 @@ export function DiasEspeciais({ lista, hoje }: { lista: TurnoEspecial[]; hoje: s
         />
         {modo === "aberto" && (
           <div className="flex flex-wrap items-center gap-2 motion-safe:animate-entrar">
-            <SeletorHora rotulo="Abre" valor={abre} max="23:30" onMudar={(h) => { setAbre(h); if (minutos(fecha) <= minutos(h)) setFecha(paraHora(minutos(h) + 30)); }} />
+            <SeletorHora rotulo="Abre" valor={abre} max="23:00" onMudar={(h) => { setAbre(h); if (minutos(fecha) < minutos(h)) setFecha(h); }} />
             <span className="text-texto-3">–</span>
-            <SeletorHora rotulo="Fecha" valor={fecha} min={paraHora(minutos(abre) + 30)} onMudar={setFecha} />
+            <SeletorHora rotulo="Última marcação" valor={fecha} min={abre} onMudar={setFecha} />
           </div>
         )}
         {erro && <p className="text-sm text-red-400">{erro}</p>}

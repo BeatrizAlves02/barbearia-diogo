@@ -8,7 +8,7 @@ import { UUID } from "@/lib/validar";
 
 export type Resultado = { erro?: string; ok?: boolean };
 
-const HORA = /^([01]\d|2[0-4]):(00|30)$/;
+const HORA = /^(([01]\d|2[0-3]):[0-5]\d|24:00)$/;
 
 type TurnoEnviado = {
   aberto: boolean;
@@ -21,15 +21,15 @@ type TurnoEnviado = {
 /** Confirma que as horas fazem sentido (abre antes de fechar, pausa dentro do horário) */
 function validarTurno(t: TurnoEnviado): string | null {
   if (!t.aberto) return null;
-  if (!t.abre || !t.fecha || !HORA.test(t.abre) || !HORA.test(t.fecha)) return "Escolhe as horas de abrir e fechar.";
-  if (minutos(t.fecha) > 1440 || minutos(t.abre) >= 1440) return "Horas inválidas.";
-  if (minutos(t.fecha) <= minutos(t.abre)) return "A hora de fechar tem de ser depois da hora de abrir.";
+  if (!t.abre || !t.fecha || !HORA.test(t.abre) || !HORA.test(t.fecha)) return "Escolhe a hora de abrir e a da última marcação.";
+  if (minutos(t.fecha) >= 1440 || minutos(t.abre) >= 1440) return "Horas inválidas.";
+  if (minutos(t.fecha) < minutos(t.abre)) return "A última marcação não pode ser antes da abertura.";
   if (t.pausa_inicio || t.pausa_fim) {
     if (!t.pausa_inicio || !t.pausa_fim || !HORA.test(t.pausa_inicio) || !HORA.test(t.pausa_fim)) return "Completa as horas da pausa.";
     const pi = minutos(t.pausa_inicio);
     const pf = minutos(t.pausa_fim);
     if (pf <= pi) return "A pausa tem de acabar depois de começar.";
-    if (pi <= minutos(t.abre) || pf >= minutos(t.fecha)) return "A pausa tem de ficar dentro do horário.";
+    if (pi <= minutos(t.abre) || pf > minutos(t.fecha)) return "A pausa tem de ficar dentro do horário.";
   }
   return null;
 }

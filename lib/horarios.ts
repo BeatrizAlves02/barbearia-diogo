@@ -1,6 +1,9 @@
 import { horaEmLisboa } from "@/lib/datas";
 
-/* Horário de um dia (habitual ou especial) — horas no formato "09:00" ou "09:00:00" */
+/*
+  Horário de um dia (habitual ou especial) — horas no formato "09:00" ou "09:00:00".
+  IMPORTANTE: "fecha" é a hora da ÚLTIMA marcação (pode acabar depois, ex.: 19:00 → 20:00).
+*/
 export type Turno = {
   aberto: boolean;
   abre: string | null;
@@ -49,7 +52,8 @@ export function foraDoHorario(m: { inicio: string; fim: string }, turno: Turno, 
   const i = minutos(horaEmLisboa(m.inicio));
   let f = minutos(horaEmLisboa(m.fim));
   if (f <= i) f += 1440; // acaba à meia-noite
-  if (i < minutos(turno.abre) || f > minutos(turno.fecha)) return "Fora do horário";
+  // tem de começar entre a abertura e a hora da última marcação (inclusive)
+  if (i < minutos(turno.abre) || i > minutos(turno.fecha)) return "Fora do horário";
   if (turno.pausa_inicio && turno.pausa_fim && i < minutos(turno.pausa_fim) && f > minutos(turno.pausa_inicio)) return "Na pausa";
   return null;
 }

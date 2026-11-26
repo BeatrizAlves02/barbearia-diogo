@@ -5,7 +5,7 @@ import { adicionarFerias, apagarFerias } from "@/app/gestao/horario/actions";
 import { classesBotaoPrimario } from "@/components/BotaoPrimario";
 import { adicionarDias, diaEmLisboa, formatarDiaCurto } from "@/lib/datas";
 import type { Bloqueio } from "@/lib/horarios";
-import { CampoData } from "./ControlosHorario";
+import { SeletorData } from "./ControlosHorario";
 
 /** Férias e outros períodos em que a barbearia está fechada (dias inteiros) */
 export function Ferias({ lista, hoje }: { lista: Bloqueio[]; hoje: string }) {
@@ -36,10 +36,17 @@ export function Ferias({ lista, hoje }: { lista: Bloqueio[]; hoje: string }) {
       </div>
 
       <div className="flex flex-col gap-4 p-5 lg:p-6">
-        <div className="flex gap-3">
-          <CampoData rotulo="DE" valor={de} min={hoje} onMudar={(v) => { setDe(v); if (!ate || ate < v) setAte(v); }} />
-          <CampoData rotulo="ATÉ" valor={ate} min={de || hoje} onMudar={setAte} />
-        </div>
+        <SeletorData
+          modo="intervalo"
+          rotulo="DIAS"
+          de={de}
+          ate={ate}
+          min={hoje}
+          onMudar={(d, a) => {
+            setDe(d);
+            setAte(a);
+          }}
+        />
         <input
           value={motivo}
           onChange={(e) => setMotivo(e.target.value)}
