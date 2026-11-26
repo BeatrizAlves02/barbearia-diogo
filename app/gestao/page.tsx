@@ -101,15 +101,40 @@ async function Conteudo({ searchParams }: Props) {
   const grelha: string[] = [];
   for (let d = inicioGrelha; d < fimGrelha; d = adicionarDias(d, 1)) grelha.push(d);
 
-  const { data, error } = await supabase
+  const de = inicioDoDiaEmLisboa(inicioGrelha);
+  const ate = inicioDoDiaEmLisboa(fimGrelha);
+
+  const [{ data, error }, { data: semanal }, { data: excecoes }, { data: bloqueios }] = await Promise.all([
+    supabase
     .from("marcacoes")
     .select(
       "id, inicio, fim, cliente_nome, cliente_telefone, nota, estado, valor_cobrado, metodo_pagamento, motivo_cancelamento, servicos(nome, preco)"
     )
     .eq("barbeiro_id", barbeiro.id)
-    .gte("inicio", inicioDoDiaEmLisboa(inicioGrelha))
-    .lt("inicio", inicioDoDiaEmLisboa(fimGrelha))
-    .order("inicio");
+    .gte("inicio", de)
+    .lt("inicio", ate)
+    .order("inicio"),
+    // Horário habitual, dias com horário especial e férias/bloqueios → para saber os dias de folga
+    supabase.from("horario_semanal").select("dia_semana, aberto").eq("barbeiro_id", barbeiro.id),
+    supabase.from("horario_dia").select("data, aberto").eq("barbeiro_id", barbeiro.id).gte("data", inicioGrelha).lt("data", fimGrelha),
+    supabase
+      .from("bloqueios")
+      .select("inicio, fim")
+      .or(`barbeiro_id.eq.${barbeiro.id},barbeiro_id.is.null`)
+      .lt("inicio", ate)
+      .gt("fim", de),
+  ]);
+
+  // Dia de folga = fechado nesse dia (horário especial, ou habitual) ou bloqueado o dia inteiro (férias)
+  const abertoNaSemana = new Map((semanal ?? []).map((h) => [h.dia_semana as number, h.aberto as boolean]));
+  const abertoNoDia = new Map((excecoes ?? []).map((h) => [h.data as string, h.aberto as boolean]));
+  const folgas = grelha.filter((d) => {
+    const aberto = abertoNoDia.get(d) ?? abertoNaSemana.get(new Date(`${d}T12:00:00Z`).getUTCDay()) ?? false;
+    if (!aberto) return true;
+    const ini = inicioDoDiaEmLisboa(d);
+    const fim = inicioDoDiaEmLisboa(adicionarDias(d, 1));
+    return (bloqueios ?? []).some((b) => new Date(b.inicio) <= new Date(ini) && new Date(b.fim) >= new Date(fim));
+  });
 
   const agora = Date.now();
   const marcacoes: MarcacaoAgenda[] = ((data ?? []) as unknown as Linha[]).map((l) => {
@@ -132,6 +157,7 @@ async function Conteudo({ searchParams }: Props) {
       metodo: l.metodo_pagamento,
       motivo: l.motivo_cancelamento,
       agora: l.estado !== "cancelada" && inicio <= agora && agora < fim,
+      comecou: inicio <= agora,
       passou: fim <= agora,
     };
   });
@@ -139,7 +165,7 @@ async function Conteudo({ searchParams }: Props) {
   return (
     <Moldura>
       <CabecalhoGestao nome={barbeiro.nome} />
-      <Agenda hoje={hoje} dia={dia} grelha={grelha} marcacoes={marcacoes} erro={error?.message ?? null} />
+      <Agenda hoje={hoje} dia={dia} grelha={grelha} folgas={folgas} marcacoes={marcacoes} erro={error?.message ?? null} />
     </Moldura>
   );
 }

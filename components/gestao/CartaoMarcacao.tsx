@@ -27,6 +27,7 @@ export type MarcacaoAgenda = {
   metodo: "mbway" | "dinheiro" | null;
   motivo: string | null;
   agora: boolean; // está a decorrer neste momento
+  comecou: boolean; // a hora de início já chegou
   passou: boolean; // a hora de fim já passou
 };
 
@@ -204,18 +205,17 @@ export function CartaoMarcacao({ m, atraso = 0 }: { m: MarcacaoAgenda; atraso?: 
         )}
 
         {(m.estado === "confirmada" || m.estado === "chegou") && painel === null && (
-          <div className={`grid gap-2 ${porFechar ? "grid-cols-[1fr_auto] lg:grid-cols-1" : "grid-cols-[1fr_auto_auto] lg:grid-cols-2"}`}>
-            <button
-              type="button"
-              onClick={() => setPainel("concluir")}
-              className={`${classesBotaoPrimario("pequeno")} ${porFechar ? "" : "lg:col-span-2"}`}
-            >
+          // Antes da hora: pode cancelar. Depois de começar: pode marcar que faltou.
+          <div className="grid grid-cols-[1fr_auto] gap-2 lg:grid-cols-1">
+            <button type="button" onClick={() => setPainel("concluir")} className={classesBotaoPrimario("pequeno")}>
               CONCLUIR
             </button>
-            <button type="button" onClick={() => executar(() => marcarFalta(m.id))} className={botaoContorno}>
-              FALTOU
-            </button>
-            {!porFechar && (
+            {m.comecou && (
+              <button type="button" onClick={() => executar(() => marcarFalta(m.id))} className={botaoContorno}>
+                FALTOU
+              </button>
+            )}
+            {!m.comecou && (
               <button
                 type="button"
                 onClick={() => setPainel("cancelar")}

@@ -20,6 +20,7 @@ type Props = {
   hoje: string;
   dia: string; // dia pedido no endereço
   grelha: string[]; // todos os dias carregados (o mês inteiro, em semanas completas)
+  folgas: string[]; // dias em que o Diogo não trabalha
   marcacoes: MarcacaoAgenda[];
   erro: string | null;
 };
@@ -35,7 +36,7 @@ function Seta({ para }: { para: "esq" | "dir" }) {
 const botaoSeta =
   "flex items-center justify-center rounded-full text-texto-3 transition-[background-color,color,transform] duration-200 hover:bg-superficie-2 hover:text-texto active:scale-90";
 
-export function Agenda({ hoje, dia: diaPedido, grelha, marcacoes, erro }: Props) {
+export function Agenda({ hoje, dia: diaPedido, grelha, folgas, marcacoes, erro }: Props) {
   const router = useRouter();
   const [aNavegar, iniciar] = useTransition();
 
@@ -65,11 +66,13 @@ export function Agenda({ hoje, dia: diaPedido, grelha, marcacoes, erro }: Props)
     return mapa;
   }, [marcacoes]);
 
+  const diasDeFolga = useMemo(() => new Set(folgas), [folgas]);
+
   function resumo(d: string) {
     const ativas = (porDia.get(d) ?? []).filter((m) => m.estado !== "cancelada");
     const fechado = ativas.length > 0 && ativas.every((m) => m.estado === "concluida" || m.estado === "faltou");
     const porFechar = ativas.some((m) => m.passou && (m.estado === "confirmada" || m.estado === "chegou"));
-    return { n: ativas.length, fechado, porFechar };
+    return { n: ativas.length, fechado, porFechar, folga: diasDeFolga.has(d) };
   }
 
   const doDia = porDia.get(dia) ?? [];
@@ -83,6 +86,7 @@ export function Agenda({ hoje, dia: diaPedido, grelha, marcacoes, erro }: Props)
   const dinheiro = soma("dinheiro");
   const progresso = ativas.length ? Math.round((fechadas.length / ativas.length) * 100) : 0;
   const diaFechado = resumo(dia).fechado;
+  const diaDeFolga = diasDeFolga.has(dia);
 
   const semana = Array.from({ length: 7 }, (_, i) => adicionarDias(segundaDaSemana(dia), i));
   const grelhaDoMes = grelha.filter((d) => d >= segundaDaSemana(primeiroDoMes(dia)));
@@ -96,6 +100,11 @@ export function Agenda({ hoje, dia: diaPedido, grelha, marcacoes, erro }: Props)
             <div className="flex flex-col gap-1">
               <span className="flex items-center gap-2 text-[10px] tracking-[0.24em] text-texto-3">
                 {dia === hoje ? "HOJE" : "AGENDA"}
+                {diaDeFolga && (
+                  <span className="rounded-full border border-borda-forte px-2 py-0.5 text-[9px] font-bold tracking-[0.16em] text-texto-2">
+                    FOLGA
+                  </span>
+                )}
                 {aNavegar && (
                   <span aria-hidden="true" className="size-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
                 )}
@@ -131,7 +140,9 @@ export function Agenda({ hoje, dia: diaPedido, grelha, marcacoes, erro }: Props)
                       onClick={() => irPara(d)}
                       aria-current={sel ? "date" : undefined}
                       className={`flex h-16 w-full flex-col items-center justify-center gap-0.5 rounded border transition-[background-color,border-color,color,transform] duration-200 active:scale-90 ${
-                        sel ? "border-texto bg-texto text-tinta" : "border-borda hover:-translate-y-0.5 hover:border-borda-forte hover:bg-superficie"
+                        sel
+                          ? "border-texto bg-texto text-tinta"
+                          : `border-borda hover:-translate-y-0.5 hover:border-borda-forte hover:bg-superficie ${r.folga ? `${RISCAS} text-desativado` : ""}`
                       }`}
                     >
                       <span className={`text-[9px] tracking-[0.14em] ${sel ? "" : d === hoje ? "font-bold text-texto" : "text-texto-3"}`}>
@@ -181,12 +192,12 @@ export function Agenda({ hoje, dia: diaPedido, grelha, marcacoes, erro }: Props)
                     type="button"
                     onClick={() => irPara(d)}
                     aria-current={sel ? "date" : undefined}
-                    aria-label={`${formatarDiaLongo(d)}${r.fechado ? ", dia fechado" : r.n ? `, ${r.n} marcações` : ""}`}
+                    aria-label={`${formatarDiaLongo(d)}${r.folga ? ", folga" : ""}${r.fechado ? ", dia fechado" : r.n ? `, ${r.n} marcações` : ""}`}
                     className={`relative flex h-12 flex-col items-center justify-center rounded transition-[background-color,color,transform,box-shadow] duration-200 active:scale-90 ${
                       sel
                         ? "bg-texto text-tinta shadow-[0_8px_24px_rgba(255,255,255,0.12)]"
-                        : `hover:-translate-y-0.5 hover:bg-superficie-2 ${d === hoje ? "ring-1 ring-texto ring-inset" : ""}`
-                    } ${foraDoMes ? "opacity-30" : passado && !sel ? "text-texto-3" : ""}`}
+                        : `hover:-translate-y-0.5 hover:bg-superficie-2 ${d === hoje ? "ring-1 ring-texto ring-inset" : ""} ${r.folga ? `${RISCAS} text-desativado` : ""}`
+                    } ${foraDoMes ? "opacity-30" : passado && !sel && !r.folga ? "text-texto-3" : ""}`}
                   >
                     <span className="text-[15px] font-bold tabular-nums">{numeroDoDia(d)}</span>
                     <Indicador r={r} sel={sel} />
@@ -200,6 +211,9 @@ export function Agenda({ hoje, dia: diaPedido, grelha, marcacoes, erro }: Props)
               </span>
               <span className="flex items-center gap-1.5">
                 <span className="size-1.5 rounded-full bg-texto" /> por fechar
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className={`size-3 rounded-sm border border-borda ${RISCAS}`} /> folga
               </span>
             </p>
           </div>
@@ -273,8 +287,8 @@ export function Agenda({ hoje, dia: diaPedido, grelha, marcacoes, erro }: Props)
           <p className="mt-4 text-sm text-red-400">Não foi possível carregar as marcações: {erro}</p>
         ) : doDia.length === 0 ? (
           <div key={`vazio-${dia}`} className="mt-4 rounded-lg border border-dashed border-borda px-5 py-12 text-center motion-safe:animate-entrar lg:py-24">
-            <p className="font-mao text-4xl">dia livre!</p>
-            <p className="mt-1 text-sm text-texto-3">Sem marcações neste dia.</p>
+            <p className="font-mao text-4xl">{diaDeFolga ? "dia de folga!" : "dia livre!"}</p>
+            <p className="mt-1 text-sm text-texto-3">{diaDeFolga ? "Neste dia não se trabalha. Aproveita!" : "Sem marcações neste dia."}</p>
           </div>
         ) : (
           <ul key={`lista-${dia}`} className="mt-4 flex flex-col gap-3">
@@ -288,8 +302,11 @@ export function Agenda({ hoje, dia: diaPedido, grelha, marcacoes, erro }: Props)
   );
 }
 
+/* Riscas diagonais discretas para os dias de folga */
+const RISCAS = "bg-[repeating-linear-gradient(135deg,transparent_0_5px,rgba(255,255,255,0.06)_5px_7px)]";
+
 /* Por baixo do número do dia: ✓ se está fechado, senão quantas marcações tem (com ponto se há por fechar) */
-function Indicador({ r, sel }: { r: { n: number; fechado: boolean; porFechar: boolean }; sel: boolean }) {
+function Indicador({ r, sel }: { r: { n: number; fechado: boolean; porFechar: boolean; folga: boolean }; sel: boolean }) {
   if (r.fechado) return <IconeVisto className={`size-3 ${sel ? "" : "text-texto"}`} />;
   if (!r.n) return <span className="h-3" />;
   return (
