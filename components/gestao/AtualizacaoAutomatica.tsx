@@ -52,7 +52,6 @@ export function AtualizacaoAutomatica() {
                 dia,
               };
               setAvisos((lista) => [...lista, aviso]);
-              setTimeout(() => setAvisos((lista) => lista.filter((x) => x.id !== aviso.id)), 8000);
             }
           }
         })
@@ -96,17 +95,29 @@ export function AtualizacaoAutomatica() {
             setAvisos((lista) => lista.filter((x) => x.id !== a.id));
             router.push(`/gestao?dia=${a.dia}`);
           }}
-          className="flex items-center gap-3 rounded-lg border border-texto bg-texto p-4 text-left text-tinta shadow-[0_20px_50px_rgba(0,0,0,0.6)] transition-transform hover:-translate-y-0.5 active:scale-[0.98] motion-safe:animate-descer"
+          className="group relative isolate flex items-center gap-3 overflow-hidden rounded-lg border border-texto bg-texto p-4 text-left text-tinta shadow-[0_20px_50px_rgba(0,0,0,0.6)] transition-[color,transform,box-shadow] duration-300 motion-safe:animate-descer before:absolute before:inset-0 before:-z-10 before:origin-left before:scale-x-0 before:bg-bg before:transition-transform before:duration-500 before:ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-1 hover:text-texto hover:shadow-[0_28px_60px_rgba(0,0,0,0.75)] hover:before:scale-x-100 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-texto"
         >
           <span className="relative flex size-2.5 shrink-0">
-            <span className="absolute inset-0 rounded-full bg-tinta motion-safe:animate-ping" />
-            <span className="relative size-2.5 rounded-full bg-tinta" />
+            <span className="absolute inset-0 rounded-full bg-current motion-safe:animate-ping" />
+            <span className="relative size-2.5 rounded-full bg-current" />
           </span>
           <span className="flex min-w-0 flex-col">
             <span className="text-[10px] font-bold tracking-[0.2em]">{a.titulo.toUpperCase()}</span>
             <span className="truncate text-sm font-bold">{a.texto}</span>
           </span>
-          <span className="ml-auto text-[10px] font-bold tracking-[0.14em] opacity-60">VER</span>
+          <span className="ml-auto flex shrink-0 items-center gap-1 text-[10px] font-bold tracking-[0.14em] opacity-60 transition-opacity duration-300 group-hover:opacity-100">
+            VER
+            <svg viewBox="0 0 24 24" className="size-3.5 transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M5 12h14M13 6l6 6-6 6" />
+            </svg>
+          </span>
+
+          {/* Tempo até o aviso desaparecer — pára enquanto o rato estiver em cima */}
+          <span
+            aria-hidden="true"
+            onAnimationEnd={() => setAvisos((lista) => lista.filter((x) => x.id !== a.id))}
+            className="absolute inset-x-0 bottom-0 h-0.5 origin-left bg-current opacity-40 animate-esvaziar group-hover:[animation-play-state:paused]"
+          />
         </button>
       ))}
     </div>
