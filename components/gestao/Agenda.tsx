@@ -21,6 +21,7 @@ type Props = {
   dia: string; // dia pedido no endereço
   grelha: string[]; // todos os dias carregados (o mês inteiro, em semanas completas)
   folgas: string[]; // dias em que o Diogo não trabalha
+  feriados: Record<string, string>; // feriado → mensagem (ex.: "Bom Natal!")
   marcacoes: MarcacaoAgenda[];
   erro: string | null;
 };
@@ -36,7 +37,7 @@ function Seta({ para }: { para: "esq" | "dir" }) {
 const botaoSeta =
   "flex items-center justify-center rounded-full text-texto-3 transition-[background-color,color,transform] duration-200 hover:bg-superficie-2 hover:text-texto active:scale-90";
 
-export function Agenda({ hoje, dia: diaPedido, grelha, folgas, marcacoes, erro }: Props) {
+export function Agenda({ hoje, dia: diaPedido, grelha, folgas, feriados, marcacoes, erro }: Props) {
   const router = useRouter();
   const [aNavegar, iniciar] = useTransition();
 
@@ -291,8 +292,10 @@ export function Agenda({ hoje, dia: diaPedido, grelha, folgas, marcacoes, erro }
           <p className="mt-4 text-sm text-red-400">Não foi possível carregar as marcações: {erro}</p>
         ) : doDia.length === 0 ? (
           <div key={`vazio-${dia}`} className="mt-4 rounded-lg border border-dashed border-borda px-5 py-12 text-center motion-safe:animate-entrar lg:py-24">
-            <p className="font-mao text-4xl">{diaDeFolga ? "dia de folga!" : "dia livre!"}</p>
-            <p className="mt-1 text-sm text-texto-3">{diaDeFolga ? "Neste dia não se trabalha. Aproveita!" : "Sem marcações neste dia."}</p>
+            <p className="font-mao text-4xl">{feriados[dia] ?? (diaDeFolga ? "dia de folga!" : "dia livre!")}</p>
+            <p className="mt-1 text-sm text-texto-3">
+              {feriados[dia] ? "É feriado, está fechado. Aproveita!" : diaDeFolga ? "Neste dia não se trabalha. Aproveita!" : "Sem marcações neste dia."}
+            </p>
           </div>
         ) : (
           <ul key={`lista-${dia}`} className="mt-4 flex flex-col gap-3">

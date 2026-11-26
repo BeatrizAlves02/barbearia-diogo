@@ -1,4 +1,5 @@
 import { horaEmLisboa } from "@/lib/datas";
+import { feriado } from "@/lib/feriados";
 
 /*
   Horário de um dia (habitual ou especial) — horas no formato "09:00" ou "09:00:00".
@@ -34,10 +35,11 @@ export const diaInteiro = (b: Bloqueio) => horaEmLisboa(b.inicio) === "00:00" &&
 
 const FECHADO: Turno = { aberto: false, abre: null, fecha: null, pausa_inicio: null, pausa_fim: null };
 
-/** Horário que vale num dia: o especial (se houver) ou o habitual desse dia da semana */
+/** Horário que vale num dia: o especial (se houver), fechado se for feriado, ou o habitual desse dia da semana */
 export function turnoDoDia(dia: string, semanal: TurnoSemanal[], especiais: TurnoEspecial[]): Turno {
   const especial = especiais.find((e) => e.data === dia);
   if (especial) return especial;
+  if (feriado(dia)) return FECHADO;
   const dow = new Date(`${dia}T12:00:00Z`).getUTCDay();
   return semanal.find((s) => s.dia_semana === dow) ?? FECHADO;
 }

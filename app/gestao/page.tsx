@@ -16,6 +16,7 @@ import {
 import { CabecalhoGestao } from "@/components/gestao/CabecalhoGestao";
 import { Agenda } from "@/components/gestao/Agenda";
 import type { MarcacaoAgenda } from "@/components/gestao/CartaoMarcacao";
+import { feriado } from "@/lib/feriados";
 import { sair } from "./actions";
 
 type Props = { searchParams: Promise<{ dia?: string }> };
@@ -130,7 +131,8 @@ async function Conteudo({ searchParams }: Props) {
   const abertoNaSemana = new Map((semanal ?? []).map((h) => [h.dia_semana as number, h.aberto as boolean]));
   const abertoNoDia = new Map((excecoes ?? []).map((h) => [h.data as string, h.aberto as boolean]));
   const folgas = grelha.filter((d) => {
-    const aberto = abertoNoDia.get(d) ?? abertoNaSemana.get(new Date(`${d}T12:00:00Z`).getUTCDay()) ?? false;
+    // feriado → fechado, a não ser que o Diogo o tenha aberto nos dias especiais
+    const aberto = abertoNoDia.get(d) ?? (feriado(d) ? false : abertoNaSemana.get(new Date(`${d}T12:00:00Z`).getUTCDay()) ?? false);
     if (!aberto) return true;
     const ini = inicioDoDiaEmLisboa(d);
     const fim = inicioDoDiaEmLisboa(adicionarDias(d, 1));
@@ -164,10 +166,13 @@ async function Conteudo({ searchParams }: Props) {
     };
   });
 
+  // Mensagem dos feriados (ex.: "Bom Natal!") para os dias de folga que são feriado
+  const feriados = Object.fromEntries(folgas.flatMap((d) => (feriado(d) ? [[d, feriado(d)!.mensagem]] : [])));
+
   return (
     <Moldura>
       <CabecalhoGestao nome={barbeiro.nome} />
-      <Agenda hoje={hoje} dia={dia} grelha={grelha} folgas={folgas} marcacoes={marcacoes} erro={error?.message ?? null} />
+      <Agenda hoje={hoje} dia={dia} grelha={grelha} folgas={folgas} feriados={feriados} marcacoes={marcacoes} erro={error?.message ?? null} />
     </Moldura>
   );
 }

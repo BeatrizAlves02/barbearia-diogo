@@ -124,19 +124,30 @@ export async function fecharHoras(dia: string, de: string, ate: string): Promise
   return { ok: true };
 }
 
-/** Férias: fecha do dia "de" até ao dia "ate" (inclusive), dias inteiros */
-export async function adicionarFerias(de: string, ate: string, motivo: string): Promise<Resultado> {
-  if (!dataValida(de) || !dataValida(ate)) return { erro: "Escolhe o primeiro e o último dia." };
-  if (ate < de) return { erro: "O último dia tem de ser depois do primeiro." };
+/** Férias: fecha os dias escolhidos (dias inteiros). Dias seguidos ficam juntos num só período. */
+export async function adicionarFerias(dias: string[], motivo: string): Promise<Resultado> {
+  const lista = [...new Set(dias)].sort();
+  if (!lista.length) return { erro: "Escolhe os dias." };
+  if (lista.length > 366 || !lista.every(dataValida)) return { erro: "Dias inválidos." };
   const p = await preparar();
   if ("erro" in p) return { erro: p.erro };
 
-  const { error } = await p.supabase.from("bloqueios").insert({
-    barbeiro_id: p.barbeiro.id,
-    inicio: inicioDoDiaEmLisboa(de),
-    fim: inicioDoDiaEmLisboa(adicionarDias(ate, 1)),
-    motivo: motivo.trim().slice(0, 60) || null,
-  });
+  // junta os dias seguidos: 22, 23, 24 → um período de 22 a 24
+  const periodos: [string, string][] = [];
+  for (const d of lista) {
+    const ultimo = periodos[periodos.length - 1];
+    if (ultimo && adicionarDias(ultimo[1], 1) === d) ultimo[1] = d;
+    else periodos.push([d, d]);
+  }
+  const texto = motivo.trim().slice(0, 60) || null;
+  const { error } = await p.supabase.from("bloqueios").insert(
+    periodos.map(([de, ate]) => ({
+      barbeiro_id: p.barbeiro.id,
+      inicio: inicioDoDiaEmLisboa(de),
+      fim: inicioDoDiaEmLisboa(adicionarDias(ate, 1)),
+      motivo: texto,
+    }))
+  );
   if (error) {
     console.error("Férias:", error.message);
     return { erro: "Não foi possível guardar. Tenta outra vez." };

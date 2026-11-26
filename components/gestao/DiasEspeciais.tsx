@@ -7,13 +7,14 @@ import { formatarHora } from "@/lib/formatar";
 import { diaEmLisboa, formatarDiaCurto, horaEmLisboa } from "@/lib/datas";
 import { curta, minutos, paraHora, type Bloqueio, type TurnoEspecial } from "@/lib/horarios";
 import { Alternador, SeletorData, SeletorHora } from "./ControlosHorario";
+import { feriado } from "@/lib/feriados";
 
 type Escolha = "dia" | "horas" | "aberto";
 
 const AJUDA: Record<Escolha, string> = {
   dia: "Ninguém pode marcar neste dia.",
   horas: "Ninguém pode marcar entre estas horas. O resto do dia fica normal.",
-  aberto: "Neste dia trabalhas a estas horas (mesmo que seja dia de folga).",
+  aberto: "Neste dia trabalhas a estas horas (mesmo que seja folga ou feriado).",
 };
 
 /** Mudar só um dia: fechar o dia todo, fechar umas horas, ou abrir com outro horário */
@@ -72,7 +73,23 @@ export function DiasEspeciais({ lista, horasFechadas, hoje }: { lista: TurnoEspe
       </div>
 
       <div className="flex flex-col gap-4 p-5 lg:p-6">
-        <SeletorData modo="dia" rotulo="1. DIA" valor={dia} min={hoje} onMudar={setDia} />
+        <SeletorData
+          modo="dia"
+          rotulo="1. DIA"
+          valor={dia}
+          min={hoje}
+          etiqueta={(d) => feriado(d)?.nome}
+          onMudar={(d) => {
+            setDia(d);
+            // num feriado já está fechado → o mais provável é querer abrir
+            if (feriado(d) && !lista.some((x) => x.data === d)) setAberto(true);
+          }}
+        />
+        {dia && feriado(dia) && (
+          <p key={dia} className="rounded border border-borda-forte bg-bg px-4 py-3 text-sm text-texto-2 motion-safe:animate-entrar">
+            <strong className="font-bold text-texto">{feriado(dia)!.nome}</strong> é feriado: já está fechado. Só precisas de guardar se quiseres trabalhar.
+          </p>
+        )}
 
         <div className="flex flex-col gap-1.5">
           <span className="text-[10px] tracking-[0.22em] text-texto-3">2. NESSE DIA ESTÁS…</span>

@@ -182,22 +182,35 @@ function IconeCalendario() {
 }
 
 type PropsData =
-  | { modo: "dia"; valor: string; onMudar: (dia: string) => void; min: string; rotulo: string }
-  | { modo: "intervalo"; de: string; ate: string; onMudar: (de: string, ate: string) => void; min: string; rotulo: string };
+  | { modo: "dia"; valor: string; onMudar: (dia: string) => void; min: string; rotulo: string; etiqueta?: (dia: string) => string | undefined }
+  | { modo: "varios"; dias: string[]; onMudar: (dias: string[]) => void; min: string; rotulo: string; etiqueta?: (dia: string) => string | undefined };
+
+/** Junta dias seguidos: ["2026-12-22","2026-12-23","2026-12-27"] → [["2026-12-22","2026-12-23"],["2026-12-27","2026-12-27"]] */
+export function juntarSeguidos(dias: string[]): [string, string][] {
+  const ord = [...new Set(dias)].sort();
+  const grupos: [string, string][] = [];
+  for (const d of ord) {
+    const ultimo = grupos[grupos.length - 1];
+    if (ultimo && adicionarDias(ultimo[1], 1) === d) ultimo[1] = d;
+    else grupos.push([d, d]);
+  }
+  return grupos;
+}
 
 /**
  * Calendário com o estilo do site (em vez do calendário do sistema).
  *  - modo "dia": escolhe um dia
- *  - modo "intervalo": 1.º toque = primeiro dia, 2.º toque = último dia
+ *  - modo "varios": toca nos dias que quiseres (ou arrasta para apanhar vários seguidos)
+ *  - etiqueta: marca alguns dias com um ponto (ex.: feriados) e mostra o nome ao passar o rato
  */
 export function SeletorData(props: PropsData) {
-  const { min, rotulo } = props;
+  const { min, rotulo, etiqueta } = props;
   const [aberto, setAberto] = useState(false);
-  const inicial = props.modo === "dia" ? props.valor : props.de;
+  const inicial = props.modo === "dia" ? props.valor : [...props.dias].sort()[0];
   const [mes, setMes] = useState(primeiroDoMes(inicial || min));
-  const [passar, setPassar] = useState<string | null>(null); // dia por baixo do rato (pré-visualizar intervalo)
-  const [meio, setMeio] = useState(false); // intervalo: já escolheu o primeiro dia
   const raiz = useRef<HTMLDivElement>(null);
+  // Arrastar (modo "varios"): de que dia começou, se está a por ou a tirar, e a escolha antes de começar
+  const arrasto = useRef<{ desde: string; por: boolean; antes: string[] } | null>(null);
 
   // Fecha ao clicar fora ou com Esc
   useEffect(() => {
@@ -216,46 +229,70 @@ export function SeletorData(props: PropsData) {
 
   function abrir() {
     setMes(primeiroDoMes(inicial || min));
-    setMeio(false);
     setAberto((a) => !a);
   }
 
-  function escolher(d: string) {
-    if (props.modo === "dia") {
-      props.onMudar(d);
-      setAberto(false);
-      return;
+  // ----- modo "varios" -----
+  function aplicarArrasto(ate: string) {
+    if (props.modo !== "varios" || !arrasto.current) return;
+    const { desde, por, antes } = arrasto.current;
+    const [a, b] = desde <= ate ? [desde, ate] : [ate, desde];
+    const faixa: string[] = [];
+    for (let d = a; d <= b; d = adicionarDias(d, 1)) if (d >= min) faixa.push(d);
+    const conj = new Set(antes);
+    for (const d of faixa) {
+      if (por) conj.add(d);
+      else conj.delete(d);
     }
-    if (!meio || d < props.de) {
-      props.onMudar(d, d);
-      setMeio(true);
-    } else {
-      props.onMudar(props.de, d);
-      setMeio(false);
-      setAberto(false);
-    }
+    props.onMudar([...conj].sort());
   }
+  function comecar(d: string, e: React.PointerEvent) {
+    if (props.modo !== "varios") return;
+    e.preventDefault();
+    arrasto.current = { desde: d, por: !props.dias.includes(d), antes: props.dias };
+    aplicarArrasto(d);
+  }
+  function mover(e: React.PointerEvent) {
+    if (!arrasto.current) return;
+    const alvo = document.elementFromPoint(e.clientX, e.clientY)?.closest<HTMLElement>("[data-dia]");
+    const d = alvo?.dataset.dia;
+    if (d && !alvo.hasAttribute("disabled")) aplicarArrasto(d);
+  }
+  useEffect(() => {
+    const parar = () => (arrasto.current = null);
+    window.addEventListener("pointerup", parar);
+    window.addEventListener("pointercancel", parar);
+    return () => {
+      window.removeEventListener("pointerup", parar);
+      window.removeEventListener("pointercancel", parar);
+    };
+  }, []);
 
   // Texto do botão
   let texto = "Escolher dia";
-  if (props.modo === "dia" && props.valor) texto = formatarDiaCurto(props.valor);
-  if (props.modo === "intervalo" && props.de)
-    texto = props.de === props.ate || !props.ate ? formatarDiaCurto(props.de) : `${formatarDiaCurto(props.de)} → ${formatarDiaCurto(props.ate)}`;
-  const vazio = props.modo === "dia" ? !props.valor : !props.de;
+  let vazio = true;
+  if (props.modo === "dia" && props.valor) {
+    texto = formatarDiaCurto(props.valor);
+    vazio = false;
+  }
+  if (props.modo === "varios" && props.dias.length) {
+    const grupos = juntarSeguidos(props.dias);
+    const n = props.dias.length;
+    texto =
+      grupos.length === 1
+        ? grupos[0][0] === grupos[0][1]
+          ? formatarDiaCurto(grupos[0][0])
+          : `${formatarDiaCurto(grupos[0][0])} → ${formatarDiaCurto(grupos[0][1])} · ${n} dias`
+        : `${n} dias escolhidos`;
+    vazio = false;
+  }
 
   // Dias do mês visível (semanas completas, a começar à segunda)
   const dias: string[] = [];
   const fimMes = adicionarDias(primeiroDoMes(mes, 1), -1);
   for (let d = segundaDaSemana(mes); d <= adicionarDias(segundaDaSemana(fimMes), 6); d = adicionarDias(d, 1)) dias.push(d);
 
-  // Intervalo a desenhar (o escolhido, ou o que se está a escolher com o rato)
-  let de = "";
-  let ate = "";
-  if (props.modo === "intervalo" && props.de) {
-    de = props.de;
-    ate = meio && passar && passar >= props.de ? passar : props.ate || props.de;
-  }
-
+  const escolhidos = new Set(props.modo === "varios" ? props.dias : props.valor ? [props.valor] : []);
   const podeRecuar = primeiroDoMes(mes, -1) >= primeiroDoMes(min);
 
   return (
@@ -278,7 +315,7 @@ export function SeletorData(props: PropsData) {
         <div
           role="dialog"
           aria-label={rotulo}
-          className="absolute top-full left-0 z-40 mt-2 w-full origin-top-left sm:w-[19.5rem] rounded-lg border border-borda-forte bg-superficie p-4 shadow-[0_24px_60px_rgba(0,0,0,0.75)] motion-safe:animate-[descer_0.25s_cubic-bezier(0.22,1,0.36,1)_backwards]"
+          className="absolute top-full left-0 z-40 mt-2 w-full origin-top-left rounded-lg border border-borda-forte bg-superficie p-4 shadow-[0_24px_60px_rgba(0,0,0,0.75)] motion-safe:animate-[descer_0.25s_cubic-bezier(0.22,1,0.36,1)_backwards] sm:w-[19.5rem]"
         >
           <div className="flex items-center justify-between">
             <span className="text-xs font-extrabold tracking-[0.16em] font-stretch-125%">{nomeDoMes(mes).toUpperCase()}</span>
@@ -303,7 +340,7 @@ export function SeletorData(props: PropsData) {
             </span>
           </div>
 
-          <div className="mt-3 grid grid-cols-7 text-center" onMouseLeave={() => setPassar(null)}>
+          <div className="mt-3 grid touch-none grid-cols-7 text-center select-none" onPointerMove={mover}>
             {["S", "T", "Q", "Q", "S", "S", "D"].map((d, i) => (
               <span key={i} className="pb-2 text-[10px] font-bold tracking-[0.1em] text-texto-3">
                 {d}
@@ -312,47 +349,83 @@ export function SeletorData(props: PropsData) {
             {dias.map((d) => {
               const desativado = d < min;
               const foraDoMes = d.slice(0, 7) !== mes.slice(0, 7);
-              const escolhido = props.modo === "dia" ? d === props.valor : d === de || d === ate;
-              const noIntervalo = props.modo === "intervalo" && de && d > de && d < ate;
+              const escolhido = escolhidos.has(d);
+              // nos "varios", dias escolhidos seguidos ficam ligados (sem cantos arredondados no meio)
+              const antes = escolhido && escolhidos.has(adicionarDias(d, -1)) && new Date(`${d}T12:00:00Z`).getUTCDay() !== 1;
+              const depois = escolhido && escolhidos.has(adicionarDias(d, 1)) && new Date(`${d}T12:00:00Z`).getUTCDay() !== 0;
+              const nota = etiqueta?.(d);
               return (
                 <button
                   key={d}
                   type="button"
+                  data-dia={d}
                   disabled={desativado}
-                  onClick={() => escolher(d)}
-                  onMouseEnter={() => setPassar(d)}
+                  title={nota}
+                  onClick={props.modo === "dia" ? () => (props.onMudar(d), setAberto(false)) : undefined}
+                  onPointerDown={props.modo === "varios" ? (e) => comecar(d, e) : undefined}
+                  onKeyDown={
+                    props.modo === "varios"
+                      ? (e) => {
+                          if (e.key !== "Enter" && e.key !== " ") return;
+                          e.preventDefault();
+                          const p = props as Extract<PropsData, { modo: "varios" }>;
+                          p.onMudar(p.dias.includes(d) ? p.dias.filter((x) => x !== d) : [...p.dias, d].sort());
+                        }
+                      : undefined
+                  }
                   aria-pressed={escolhido}
-                  aria-label={formatarDiaCurto(d)}
+                  aria-label={`${formatarDiaCurto(d)}${nota ? ` (${nota})` : ""}`}
                   className={`relative my-0.5 flex h-9 items-center justify-center text-sm font-bold tabular-nums transition-[background-color,color,transform] duration-150 active:scale-90 disabled:pointer-events-none ${
-                    escolhido
-                      ? "rounded bg-texto text-tinta"
-                      : noIntervalo
-                        ? "bg-white/[0.12] text-texto"
-                        : "rounded hover:bg-superficie-2"
-                  } ${desativado ? "text-texto-3/30" : foraDoMes && !escolhido ? "text-texto-3" : ""} ${
-                    d === min && !escolhido ? "ring-1 ring-texto-3 ring-inset" : ""
-                  }`}
+                    escolhido ? "bg-texto text-tinta" : "rounded hover:bg-superficie-2"
+                  } ${escolhido && !antes ? "rounded-l" : ""} ${escolhido && !depois ? "rounded-r" : ""} ${
+                    desativado ? "text-texto-3/30" : foraDoMes && !escolhido ? "text-texto-3" : ""
+                  } ${d === min && !escolhido ? "ring-1 ring-texto-3 ring-inset" : ""}`}
                 >
                   {numeroDoDia(d)}
+                  {nota && !desativado && (
+                    <span className={`absolute bottom-1 size-1 rounded-full ${escolhido ? "bg-tinta" : "bg-texto-2"}`} aria-hidden="true" />
+                  )}
                 </button>
               );
             })}
           </div>
 
-          <div className="mt-3 flex items-center justify-between border-t border-borda pt-3 text-xs">
-            <span className="text-texto-3">
-              {props.modo === "intervalo" ? (meio ? "Agora escolhe o último dia" : "Escolhe o primeiro dia") : "Escolhe um dia"}
-            </span>
-            <button
-              type="button"
-              onClick={() => {
-                setMes(primeiroDoMes(min));
-                escolher(min);
-              }}
-              className="font-bold tracking-[0.12em] text-texto-2 transition-colors hover:text-texto"
-            >
-              HOJE
-            </button>
+          <div className="mt-3 flex items-center justify-between gap-3 border-t border-borda pt-3 text-xs">
+            {props.modo === "varios" ? (
+              <>
+                <span className="text-texto-3">
+                  {props.dias.length ? `${props.dias.length} ${props.dias.length === 1 ? "dia" : "dias"}` : "Toca nos dias ou arrasta"}
+                </span>
+                <span className="flex items-center gap-3">
+                  {props.dias.length > 0 && (
+                    <button type="button" onClick={() => props.onMudar([])} className="font-bold tracking-[0.12em] text-texto-3 transition-colors hover:text-texto">
+                      LIMPAR
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setAberto(false)}
+                    className="rounded-full bg-texto px-3 py-1.5 font-bold tracking-[0.12em] text-tinta transition-transform active:scale-95"
+                  >
+                    OK
+                  </button>
+                </span>
+              </>
+            ) : (
+              <>
+                <span className="text-texto-3">{etiqueta ? "• = feriado" : "Escolhe um dia"}</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    props.onMudar(min);
+                    setAberto(false);
+                  }}
+                  className="font-bold tracking-[0.12em] text-texto-2 transition-colors hover:text-texto"
+                >
+                  HOJE
+                </button>
+              </>
+            )}
           </div>
         </div>
       )}

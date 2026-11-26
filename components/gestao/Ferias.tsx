@@ -5,12 +5,12 @@ import { adicionarFerias, apagarFerias } from "@/app/gestao/horario/actions";
 import { classesBotaoPrimario } from "@/components/BotaoPrimario";
 import { adicionarDias, diaEmLisboa, formatarDiaCurto } from "@/lib/datas";
 import type { Bloqueio } from "@/lib/horarios";
+import { feriado } from "@/lib/feriados";
 import { SeletorData } from "./ControlosHorario";
 
 /** Férias e outros períodos em que a barbearia está fechada (dias inteiros) */
 export function Ferias({ lista, hoje }: { lista: Bloqueio[]; hoje: string }) {
-  const [de, setDe] = useState("");
-  const [ate, setAte] = useState("");
+  const [dias, setDias] = useState<string[]>([]);
   const [motivo, setMotivo] = useState("");
   const [erro, setErro] = useState<string | null>(null);
   const [aGuardar, iniciar] = useTransition();
@@ -18,11 +18,10 @@ export function Ferias({ lista, hoje }: { lista: Bloqueio[]; hoje: string }) {
   function guardar() {
     setErro(null);
     iniciar(async () => {
-      const r = await adicionarFerias(de, ate || de, motivo);
+      const r = await adicionarFerias(dias, motivo);
       if (r.erro) setErro(r.erro);
       else {
-        setDe("");
-        setAte("");
+        setDias([]);
         setMotivo("");
       }
     });
@@ -36,17 +35,7 @@ export function Ferias({ lista, hoje }: { lista: Bloqueio[]; hoje: string }) {
       </div>
 
       <div className="flex flex-col gap-4 p-5 lg:p-6">
-        <SeletorData
-          modo="intervalo"
-          rotulo="DIAS"
-          de={de}
-          ate={ate}
-          min={hoje}
-          onMudar={(d, a) => {
-            setDe(d);
-            setAte(a);
-          }}
-        />
+        <SeletorData modo="varios" rotulo="DIAS (TOCA OU ARRASTA)" dias={dias} min={hoje} onMudar={setDias} etiqueta={(d) => feriado(d)?.nome} />
         <label className="flex flex-col gap-1.5">
           <span className="text-[10px] tracking-[0.22em] text-texto-3">MENSAGEM PARA OS CLIENTES (OPCIONAL)</span>
           <input
@@ -60,18 +49,18 @@ export function Ferias({ lista, hoje }: { lista: Bloqueio[]; hoje: string }) {
         {/* O que o cliente vai ver ao tocar nesses dias */}
         <div className="flex items-center justify-between gap-3 rounded border border-dashed border-borda-forte px-4 py-3">
           <span className="text-[10px] tracking-[0.22em] text-texto-3">OS CLIENTES VEEM</span>
-          <span key={motivo.trim() ? "m" : "f"} className="-rotate-2 truncate font-mao text-2xl motion-safe:animate-entrar">
+          <span key={motivo.trim() ? "m" : "f"} className="-rotate-2 truncate px-1 py-1 font-mao text-2xl motion-safe:animate-entrar">
             {motivo.trim() || "Dia de folga!"}
           </span>
         </div>
         {erro && <p className="text-sm text-red-400">{erro}</p>}
         <button
           type="button"
-          disabled={!de || aGuardar}
+          disabled={!dias.length || aGuardar}
           onClick={guardar}
           className={`${classesBotaoPrimario("pequeno")} disabled:pointer-events-none disabled:opacity-40`}
         >
-          {aGuardar ? "A GUARDAR…" : "MARCAR FÉRIAS"}
+          {aGuardar ? "A GUARDAR…" : !dias.length ? "ESCOLHE OS DIAS" : `MARCAR ${dias.length} ${dias.length === 1 ? "DIA" : "DIAS"}`}
         </button>
       </div>
 
