@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { barbeiroComSessao } from "@/lib/gestao";
-import { adicionarDias, dataValida, inicioDoDiaEmLisboa } from "@/lib/datas";
+import { adicionarDias, dataValida, inicioDoDiaEmLisboa, momentoEmLisboa } from "@/lib/datas";
 import { minutos } from "@/lib/horarios";
 import { UUID } from "@/lib/validar";
 
@@ -49,6 +49,7 @@ async function preparar() {
 function atualizarPaginas() {
   revalidatePath("/gestao/horario");
   revalidatePath("/gestao");
+  revalidatePath("/marcar", "layout"); // o site dos clientes mostra logo o horário novo
 }
 
 /** Horário habitual: os 7 dias da semana de uma vez */
@@ -101,6 +102,28 @@ export async function apagarDiaEspecial(dia: string): Promise<Resultado> {
   return { ok: true };
 }
 
+/** Fechar só umas horas de um dia (ex.: das 14:00 às 16:00) */
+export async function fecharHoras(dia: string, de: string, ate: string): Promise<Resultado> {
+  if (!dataValida(dia)) return { erro: "Escolhe um dia." };
+  if (!HORA.test(de) || !HORA.test(ate)) return { erro: "Horas inválidas." };
+  if (minutos(ate) <= minutos(de)) return { erro: "A hora do fim tem de ser depois da do início." };
+  const p = await preparar();
+  if ("erro" in p) return { erro: p.erro };
+
+  const { error } = await p.supabase.from("bloqueios").insert({
+    barbeiro_id: p.barbeiro.id,
+    inicio: momentoEmLisboa(dia, de),
+    fim: minutos(ate) >= 1440 ? inicioDoDiaEmLisboa(adicionarDias(dia, 1)) : momentoEmLisboa(dia, ate),
+    motivo: null,
+  });
+  if (error) {
+    console.error("Fechar horas:", error.message);
+    return { erro: "Não foi possível guardar. Tenta outra vez." };
+  }
+  atualizarPaginas();
+  return { ok: true };
+}
+
 /** Férias: fecha do dia "de" até ao dia "ate" (inclusive), dias inteiros */
 export async function adicionarFerias(de: string, ate: string, motivo: string): Promise<Resultado> {
   if (!dataValida(de) || !dataValida(ate)) return { erro: "Escolhe o primeiro e o último dia." };
@@ -112,7 +135,7 @@ export async function adicionarFerias(de: string, ate: string, motivo: string): 
     barbeiro_id: p.barbeiro.id,
     inicio: inicioDoDiaEmLisboa(de),
     fim: inicioDoDiaEmLisboa(adicionarDias(ate, 1)),
-    motivo: motivo.trim().slice(0, 100) || null,
+    motivo: motivo.trim().slice(0, 60) || null,
   });
   if (error) {
     console.error("Férias:", error.message);

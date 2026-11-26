@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { buscarVagas } from "@/app/marcar/horario/actions";
 import { IconeVoltar } from "@/components/icones";
 import { formatarDuracao, formatarPreco } from "@/lib/formatar";
@@ -14,7 +14,7 @@ import {
   numeroDoDia,
   rotuloDaSemana,
 } from "@/lib/datas";
-import type { Servico, Vaga } from "./tipos";
+import type { Semana, Servico, Vaga } from "./tipos";
 import { EsqueletoMarcacao } from "./EsqueletoMarcacao";
 import { PainelResumo } from "./PainelResumo";
 import { BotaoContinuar } from "./BotaoContinuar";
@@ -26,16 +26,20 @@ type Props = {
   nomeBarbeiro: string;
   servico: Servico;
   hoje: string; // "AAAA-MM-DD" em Lisboa
-  vagasIniciais: Vaga[]; // vagas da primeira semana (vêm do servidor)
+  semanaInicial: Semana; // vagas e dias fechados da primeira semana (vêm do servidor)
   nomes: Record<string, string>; // id → nome de cada barbeiro
 };
 
 const primeiroDiaComVagas = (vagas: Vaga[]) => (vagas.length ? diaEmLisboa(vagas[0].inicio) : null);
 
-export function EscolherHorario({ barbeiro, nomeBarbeiro, servico, hoje, vagasIniciais, nomes }: Props) {
+/** De quanto em quanto tempo o site volta a perguntar as horas livres (para apanhar mudanças do Diogo) */
+const ATUALIZAR_MS = 20_000;
+
+export function EscolherHorario({ barbeiro, nomeBarbeiro, servico, hoje, semanaInicial, nomes }: Props) {
   const [inicioSemana, setInicioSemana] = useState(hoje);
-  const [vagas, setVagas] = useState<Vaga[]>(vagasIniciais);
-  const [diaSel, setDiaSel] = useState<string | null>(() => primeiroDiaComVagas(vagasIniciais));
+  const [vagas, setVagas] = useState<Vaga[]>(semanaInicial.vagas);
+  const [fechados, setFechados] = useState(semanaInicial.fechados);
+  const [diaSel, setDiaSel] = useState<string | null>(() => primeiroDiaComVagas(semanaInicial.vagas) ?? hoje);
   const [vagaSel, setVagaSel] = useState<Vaga | null>(null);
   const [aCarregar, iniciarTransicao] = useTransition();
 
@@ -70,11 +74,44 @@ export function EscolherHorario({ barbeiro, nomeBarbeiro, servico, hoje, vagasIn
     setInicioSemana(novoInicio);
     setVagaSel(null);
     iniciarTransicao(async () => {
-      const novas = await buscarVagas(barbeiro, servico.id, novoInicio, adicionarDias(novoInicio, 6));
-      setVagas(novas);
-      setDiaSel(primeiroDiaComVagas(novas));
+      const nova = await buscarVagas(barbeiro, servico.id, novoInicio, adicionarDias(novoInicio, 6));
+      setVagas(nova.vagas);
+      setFechados(nova.fechados);
+      setDiaSel(primeiroDiaComVagas(nova.vagas) ?? novoInicio);
     });
   }
+
+  // Mantém as horas sempre certas: volta a perguntar de 20 em 20 s e quando se regressa à página.
+  // Se o Diogo fechar um dia ou alguém marcar uma hora, desaparece logo daqui.
+  const atual = useRef({ inicioSemana, vagaSel });
+  useEffect(() => {
+    atual.current = { inicioSemana, vagaSel };
+  }, [inicioSemana, vagaSel]);
+  useEffect(() => {
+    let parado = false;
+    async function atualizar() {
+      if (document.hidden) return;
+      const semana = atual.current.inicioSemana;
+      const nova = await buscarVagas(barbeiro, servico.id, semana, adicionarDias(semana, 6));
+      if (parado || semana !== atual.current.inicioSemana) return; // entretanto mudou de semana
+      setVagas(nova.vagas);
+      setFechados(nova.fechados);
+      const escolhida = atual.current.vagaSel;
+      if (escolhida && !nova.vagas.some((v) => v.inicio === escolhida.inicio && v.barbeiro_id === escolhida.barbeiro_id)) setVagaSel(null);
+    }
+    const id = setInterval(atualizar, ATUALIZAR_MS);
+    const aoVoltar = () => !document.hidden && atualizar();
+    document.addEventListener("visibilitychange", aoVoltar);
+    window.addEventListener("focus", aoVoltar);
+    return () => {
+      parado = true;
+      clearInterval(id);
+      document.removeEventListener("visibilitychange", aoVoltar);
+      window.removeEventListener("focus", aoVoltar);
+    };
+  }, [barbeiro, servico.id]);
+
+  const fechadoSel = diaSel ? fechados.find((f) => f.dia === diaSel) : undefined;
 
   // Textos do resumo
   const nomeAtribuido = vagaSel ? nomes[vagaSel.barbeiro_id] ?? nomeBarbeiro : nomeBarbeiro;
@@ -155,7 +192,7 @@ export function EscolherHorario({ barbeiro, nomeBarbeiro, servico, hoje, vagasIn
                 key={dia}
                 type="button"
                 aria-pressed={sel}
-                disabled={!temVagas}
+                disabled={aCarregar}
                 onClick={() => {
                   setDiaSel(dia);
                   setVagaSel(null);
@@ -164,10 +201,12 @@ export function EscolherHorario({ barbeiro, nomeBarbeiro, servico, hoje, vagasIn
                   aCarregar
                     ? "animate-pulse border-borda text-texto-3"
                     : sel
-                      ? "border-texto bg-texto text-tinta"
+                      ? temVagas
+                        ? "border-texto bg-texto text-tinta"
+                        : "border-borda-forte bg-superficie-2 text-texto-2"
                       : temVagas
                         ? "border-borda hover:border-texto"
-                        : "border-transparent text-desativado"
+                        : "border-transparent text-desativado hover:text-texto-3"
                 }`}
               >
                 <span className="text-[10px] tracking-[0.12em]">{dia === hoje ? "HOJE" : diaDaSemanaCurto(dia)}</span>
@@ -186,15 +225,24 @@ export function EscolherHorario({ barbeiro, nomeBarbeiro, servico, hoje, vagasIn
           ))}
         </div>
       ) : vagasDoDia.length === 0 ? (
-        <div className="flex flex-col items-start gap-3 rounded border border-borda p-5 motion-safe:animate-entrar">
-          <p className="text-sm text-texto-2">Sem horários livres nesta semana.</p>
-          <button
-            type="button"
-            onClick={() => mudarSemana(1)}
-            className="link-sublinhado text-sm font-bold"
+        <div key={diaSel} className="flex flex-col items-start gap-3 rounded border border-borda p-5 motion-safe:animate-entrar lg:p-6">
+          <p
+            className={`-rotate-2 font-mao text-4xl leading-tight motion-safe:animate-escrever lg:text-5xl ${fechadoSel ? "" : "text-texto-2"}`}
           >
-            Ver a semana seguinte →
-          </button>
+            {fechadoSel ? fechadoSel.motivo || "Dia de folga!" : "Dia cheio!"}
+          </p>
+          <p className="text-sm text-texto-2">
+            {vagasPorDia.size > 0
+              ? "Escolhe outro dia desta semana."
+              : fechadoSel
+                ? "Nesta semana já não há horas livres."
+                : "Já não há horas livres nesta semana."}
+          </p>
+          {vagasPorDia.size === 0 && (
+            <button type="button" onClick={() => mudarSemana(1)} className="link-sublinhado text-sm font-bold">
+              Ver a semana seguinte →
+            </button>
+          )}
         </div>
       ) : (
         <fieldset key={diaSel} className="flex flex-col gap-5">

@@ -90,6 +90,15 @@ export function inicioDoDiaEmLisboa(ymd: string) {
   return new Date(`${ymd}T00:00:00${desvio}`).toISOString();
 }
 
+/** Instante (ISO, UTC) de uma hora de Lisboa: ("2026-12-08", "14:00") → "2026-12-08T14:00:00.000Z" */
+export function momentoEmLisboa(ymd: string, hhmm: string) {
+  const partes = new Intl.DateTimeFormat("en-US", { timeZone: "Europe/Lisbon", timeZoneName: "longOffset" }).formatToParts(
+    new Date(`${ymd}T${hhmm}:00Z`)
+  );
+  const desvio = partes.find((p) => p.type === "timeZoneName")?.value.replace("GMT", "") || "Z";
+  return new Date(`${ymd}T${hhmm}:00${desvio}`).toISOString();
+}
+
 /** É uma data válida no formato "AAAA-MM-DD"? */
 export function dataValida(ymd: string) {
   return /^\d{4}-\d{2}-\d{2}$/.test(ymd) && !Number.isNaN(paraData(ymd).getTime()) && paraData(ymd).toISOString().startsWith(ymd);

@@ -80,15 +80,16 @@ async function Conteudo({ searchParams }: Props) {
 
   // Vagas da primeira semana (a partir de hoje)
   const hoje = hojeEmLisboa();
-  const vagas = await buscarVagas(barbeiro, s.id, hoje, adicionarDias(hoje, 6));
+  const semana = await buscarVagas(barbeiro, s.id, hoje, adicionarDias(hoje, 6));
 
   return (
     <EscolherHorario
+      key={`${barbeiro}-${s.id}`} // ao trocar de serviço, começa do zero (horas de 30 em 30 ou de 60 em 60)
       barbeiro={barbeiro}
       nomeBarbeiro={barbeiro === "qualquer" ? "Primeiro disponível" : nomes[barbeiro]}
       servico={s}
       hoje={hoje}
-      vagasIniciais={vagas}
+      semanaInicial={semana}
       nomes={nomes}
     />
   );

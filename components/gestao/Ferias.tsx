@@ -47,13 +47,23 @@ export function Ferias({ lista, hoje }: { lista: Bloqueio[]; hoje: string }) {
             setAte(a);
           }}
         />
-        <input
-          value={motivo}
-          onChange={(e) => setMotivo(e.target.value)}
-          maxLength={100}
-          placeholder="Motivo (opcional) — ex.: férias de verão"
-          className="h-11 rounded border border-borda-forte bg-bg px-3 text-sm outline-none transition-colors placeholder:text-desativado focus:border-texto"
-        />
+        <label className="flex flex-col gap-1.5">
+          <span className="text-[10px] tracking-[0.22em] text-texto-3">MENSAGEM PARA OS CLIENTES (OPCIONAL)</span>
+          <input
+            value={motivo}
+            onChange={(e) => setMotivo(e.target.value)}
+            maxLength={60}
+            placeholder="ex.: Férias de verão"
+            className="h-11 rounded border border-borda-forte bg-bg px-3 text-sm outline-none transition-colors placeholder:text-desativado focus:border-texto"
+          />
+        </label>
+        {/* O que o cliente vai ver ao tocar nesses dias */}
+        <div className="flex items-center justify-between gap-3 rounded border border-dashed border-borda-forte px-4 py-3">
+          <span className="text-[10px] tracking-[0.22em] text-texto-3">OS CLIENTES VEEM</span>
+          <span key={motivo.trim() ? "m" : "f"} className="-rotate-2 truncate font-mao text-2xl motion-safe:animate-entrar">
+            {motivo.trim() || "Dia de folga!"}
+          </span>
+        </div>
         {erro && <p className="text-sm text-red-400">{erro}</p>}
         <button
           type="button"

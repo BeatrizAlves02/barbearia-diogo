@@ -29,6 +29,9 @@ export function paraHora(min: number) {
 /** "09:00:00" → "09:00" */
 export const curta = (hora: string | null) => (hora ? hora.slice(0, 5) : null);
 
+/** O bloqueio tapa dias inteiros (férias)? Senão, é só umas horas de um dia. */
+export const diaInteiro = (b: Bloqueio) => horaEmLisboa(b.inicio) === "00:00" && horaEmLisboa(b.fim) === "00:00";
+
 const FECHADO: Turno = { aberto: false, abre: null, fecha: null, pausa_inicio: null, pausa_fim: null };
 
 /** Horário que vale num dia: o especial (se houver) ou o habitual desse dia da semana */
@@ -46,7 +49,8 @@ export function turnoDoDia(dia: string, semanal: TurnoSemanal[], especiais: Turn
 export function foraDoHorario(m: { inicio: string; fim: string }, turno: Turno, bloqueios: Bloqueio[]): string | null {
   const ini = new Date(m.inicio).getTime();
   const fim = new Date(m.fim).getTime();
-  if (bloqueios.some((b) => new Date(b.inicio).getTime() < fim && new Date(b.fim).getTime() > ini)) return "Férias / dia bloqueado";
+  const bloqueio = bloqueios.find((b) => new Date(b.inicio).getTime() < fim && new Date(b.fim).getTime() > ini);
+  if (bloqueio) return diaInteiro(bloqueio) ? "Férias" : "Horas fechadas";
   if (!turno.aberto || !turno.abre || !turno.fecha) return "Dia fechado";
 
   const i = minutos(horaEmLisboa(m.inicio));
