@@ -1,4 +1,4 @@
-import { horaEmLisboa } from "@/lib/datas";
+import { adicionarDias, diaEmLisboa, horaEmLisboa } from "@/lib/datas";
 import { feriado } from "@/lib/feriados";
 
 /*
@@ -27,6 +27,25 @@ export function paraHora(min: number) {
   return `${String(Math.floor(min / 60)).padStart(2, "0")}:${String(min % 60).padStart(2, "0")}`;
 }
 
+/** Abre no mínimo às 06:00 */
+export const ABRE_MIN = 6 * 60;
+
+/** Última marcação no máximo às 03:00 do dia seguinte (em minutos desde a meia-noite do dia: 27 h) */
+export const ULTIMA_MAX = 27 * 60;
+
+/**
+ * Horas "esticadas" para lidar com a madrugada: se uma hora é mais cedo que a abertura,
+ * é do dia seguinte → soma 24 h. Ex.: abre "09:00", hora "01:00" → 1500 (25:00).
+ */
+export function esticar(hora: string, abre: string, inclusivo = false) {
+  const h = minutos(hora);
+  const a = minutos(abre);
+  return h < a || (inclusivo && h === a) ? h + 1440 : h;
+}
+
+/** Volta a pôr uma hora "esticada" no formato normal: "25:00" → "01:00" */
+export const normalizar = (hora: string) => paraHora(minutos(hora) % 1440);
+
 /** "09:00:00" → "09:00" */
 export const curta = (hora: string | null) => (hora ? hora.slice(0, 5) : null);
 
@@ -48,18 +67,36 @@ export function turnoDoDia(dia: string, semanal: TurnoSemanal[], especiais: Turn
  * Esta marcação cabe no horário do dia? Devolve o motivo se NÃO couber, ou null se estiver tudo bem.
  * (Usado para avisar o Diogo quando muda o horário e há marcações já feitas que ficam de fora.)
  */
-export function foraDoHorario(m: { inicio: string; fim: string }, turno: Turno, bloqueios: Bloqueio[]): string | null {
+export function foraDoHorario(
+  m: { inicio: string; fim: string },
+  turnoDe: (dia: string) => Turno, // horário que vale em cada dia
+  bloqueios: Bloqueio[]
+): string | null {
   const ini = new Date(m.inicio).getTime();
   const fim = new Date(m.fim).getTime();
   const bloqueio = bloqueios.find((b) => new Date(b.inicio).getTime() < fim && new Date(b.fim).getTime() > ini);
   if (bloqueio) return diaInteiro(bloqueio) ? "Férias" : "Horas fechadas";
-  if (!turno.aberto || !turno.abre || !turno.fecha) return "Dia fechado";
 
+  const dia = diaEmLisboa(m.inicio);
   const i = minutos(horaEmLisboa(m.inicio));
-  let f = minutos(horaEmLisboa(m.fim));
-  if (f <= i) f += 1440; // acaba à meia-noite
-  // tem de começar entre a abertura e a hora da última marcação (inclusive)
-  if (i < minutos(turno.abre) || i > minutos(turno.fecha)) return "Fora do horário";
-  if (turno.pausa_inicio && turno.pausa_fim && i < minutos(turno.pausa_fim) && f > minutos(turno.pausa_inicio)) return "Na pausa";
-  return null;
+  const dur = Math.round((fim - ini) / 60_000);
+
+  // cabe no horário desse dia? (deslocamento = 1440 quando é a madrugada do turno do dia anterior)
+  function cabe(turno: Turno, deslocamento: number): string | null {
+    if (!turno.aberto || !turno.abre || !turno.fecha) return "Dia fechado";
+    const a = minutos(turno.abre);
+    const u = esticar(turno.fecha, turno.abre);
+    const c = i + deslocamento;
+    if (c < a || c > u) return "Fora do horário";
+    if (turno.pausa_inicio && turno.pausa_fim) {
+      const pi = esticar(turno.pausa_inicio, turno.abre);
+      const pf = esticar(turno.pausa_fim, turno.abre, true);
+      if (c < pf && c + dur > pi) return "Na pausa";
+    }
+    return null;
+  }
+  const hoje = cabe(turnoDe(dia), 0);
+  if (!hoje) return null;
+  const vespera = cabe(turnoDe(adicionarDias(dia, -1)), 1440); // ex.: 00:30 de sábado no turno de sexta
+  return vespera ? hoje : null;
 }

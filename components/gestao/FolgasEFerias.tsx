@@ -5,7 +5,7 @@ import { abrirDias, adicionarFerias, apagarDiaEspecial, apagarFerias, fecharHora
 import { classesBotaoPrimario } from "@/components/BotaoPrimario";
 import { formatarHora } from "@/lib/formatar";
 import { adicionarDias, diaEmLisboa, formatarDiaCurto, horaEmLisboa } from "@/lib/datas";
-import { curta, diaInteiro, minutos, paraHora, turnoDoDia, type Bloqueio, type TurnoEspecial, type TurnoSemanal } from "@/lib/horarios";
+import { curta, diaInteiro, minutos, normalizar, paraHora, turnoDoDia, ULTIMA_MAX, ABRE_MIN, type Bloqueio, type TurnoEspecial, type TurnoSemanal } from "@/lib/horarios";
 import { feriado } from "@/lib/feriados";
 import { Alternador, SeletorData, SeletorHora } from "./ControlosHorario";
 
@@ -66,7 +66,7 @@ export function FolgasEFerias({
     iniciar(async () => {
       const r =
         escolha === "aberto"
-          ? await abrirDias(dias, { aberto: true, abre, fecha, pausa_inicio: null, pausa_fim: null })
+          ? await abrirDias(dias, { aberto: true, abre, fecha: normalizar(fecha), pausa_inicio: null, pausa_fim: null })
           : escolha === "horas"
             ? await fecharHorasVarios(dias, de, ate)
             : await adicionarFerias(dias, mensagem);
@@ -85,7 +85,9 @@ export function FolgasEFerias({
       chave: `d${d.data}`,
       data: d.data,
       titulo: formatarDiaCurto(d.data),
-      texto: d.aberto ? `Aberto · ${formatarHora(curta(d.abre) ?? "")} – ${formatarHora(curta(d.fecha) ?? "")}` : "Fechado o dia todo",
+      texto: d.aberto
+        ? `Aberto · ${formatarHora(curta(d.abre) ?? "")} – ${formatarHora(curta(d.fecha) ?? "")}${(curta(d.fecha) ?? "") < (curta(d.abre) ?? "") ? " (dia seguinte)" : ""}`
+        : "Fechado o dia todo",
       apagar: () => apagarDiaEspecial(d.data),
     })),
     ...bloqueios.map((b) => {
@@ -160,9 +162,9 @@ export function FolgasEFerias({
             {soHoras ? (
               <div className="flex flex-wrap items-center gap-2 motion-safe:animate-entrar">
                 <span className="w-9 text-[11px] font-bold tracking-[0.14em] text-texto-3">DAS</span>
-                <SeletorHora rotulo="Fechado das" valor={de} max="23:00" onMudar={(h) => { setDe(h); if (minutos(ate) <= minutos(h)) setAte(paraHora(minutos(h) + 30)); }} />
+                <SeletorHora rotulo="Fechado das" valor={de} min={paraHora(ABRE_MIN)} max="23:30" onMudar={(h) => { setDe(h); if (minutos(ate) <= minutos(h)) setAte(paraHora(minutos(h) + 30)); }} />
                 <span className="px-1 text-[11px] font-bold tracking-[0.14em] text-texto-3">ÀS</span>
-                <SeletorHora rotulo="Fechado até às" valor={ate} min={paraHora(minutos(de) + 30)} max="23:30" onMudar={setAte} />
+                <SeletorHora rotulo="Fechado até às" valor={ate} min={paraHora(minutos(de) + 30)} max="24:00" onMudar={setAte} />
               </div>
             ) : (
               <label className="flex flex-col gap-1.5 motion-safe:animate-entrar">
@@ -181,9 +183,9 @@ export function FolgasEFerias({
 
         {aberto && (
           <div className="flex flex-wrap items-center gap-2 motion-safe:animate-entrar">
-            <SeletorHora rotulo="Abre" valor={abre} max="23:00" onMudar={(h) => { setAbre(h); if (minutos(fecha) < minutos(h)) setFecha(h); }} />
+            <SeletorHora rotulo="Abre" valor={abre} min={paraHora(ABRE_MIN)} max="23:30" onMudar={(h) => { setAbre(h); if (minutos(fecha) < minutos(h)) setFecha(h); }} />
             <span className="text-texto-3">–</span>
-            <SeletorHora rotulo="Última marcação" valor={fecha} min={abre} onMudar={setFecha} />
+            <SeletorHora rotulo="Última marcação" valor={fecha} min={abre} max={paraHora(ULTIMA_MAX)} onMudar={setFecha} />
           </div>
         )}
 

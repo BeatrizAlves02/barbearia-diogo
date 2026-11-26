@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { guardarHorarioHabitual } from "@/app/gestao/horario/actions";
 import { classesBotaoPrimario } from "@/components/BotaoPrimario";
 import { IconeVisto } from "@/components/icones";
-import { curta, minutos, paraHora, type TurnoSemanal } from "@/lib/horarios";
+import { curta, esticar, minutos, normalizar, paraHora, ULTIMA_MAX, ABRE_MIN, type TurnoSemanal } from "@/lib/horarios";
 import { Interruptor, SeletorHora } from "./ControlosHorario";
 
 type Linha = { dia_semana: number; aberto: boolean; abre: string; fecha: string; pausa: boolean; pausa_inicio: string; pausa_fim: string };
@@ -15,14 +15,17 @@ const ORDEM = [1, 2, 3, 4, 5, 6, 0]; // a semana começa à segunda
 function paraLinhas(inicial: TurnoSemanal[]): Linha[] {
   return ORDEM.map((dia) => {
     const t = inicial.find((x) => x.dia_semana === dia);
+    const abre = curta(t?.abre ?? null) ?? "09:00";
+    // horas depois da meia-noite ficam "esticadas" (01:00 → 25:00) para as contas darem certo
+    const estica = (h: string | null, def: string, inclusivo = false) => paraHora(esticar(curta(h) ?? def, abre, inclusivo));
     return {
       dia_semana: dia,
       aberto: t?.aberto ?? false,
-      abre: curta(t?.abre ?? null) ?? "09:00",
-      fecha: curta(t?.fecha ?? null) ?? "19:00",
+      abre,
+      fecha: estica(t?.fecha ?? null, "19:00"),
       pausa: Boolean(t?.pausa_inicio && t?.pausa_fim),
-      pausa_inicio: curta(t?.pausa_inicio ?? null) ?? "13:00",
-      pausa_fim: curta(t?.pausa_fim ?? null) ?? "14:00",
+      pausa_inicio: estica(t?.pausa_inicio ?? null, "13:00"),
+      pausa_fim: estica(t?.pausa_fim ?? null, "14:00", true),
     };
   });
 }
@@ -45,6 +48,7 @@ export function HorarioHabitual({ inicial }: { inicial: TurnoSemanal[] }) {
         const n = { ...l, ...alteracao };
         // mantém as horas sempre coerentes enquanto se carrega nos botões
         if (minutos(n.fecha) < minutos(n.abre)) n.fecha = n.abre;
+        if (minutos(n.fecha) > ULTIMA_MAX) n.fecha = paraHora(ULTIMA_MAX);
         if (n.pausa) {
           if (minutos(n.pausa_inicio) <= minutos(n.abre)) n.pausa_inicio = paraHora(minutos(n.abre) + 30);
           if (minutos(n.pausa_fim) <= minutos(n.pausa_inicio)) n.pausa_fim = paraHora(minutos(n.pausa_inicio) + 30);
@@ -62,9 +66,9 @@ export function HorarioHabitual({ inicial }: { inicial: TurnoSemanal[] }) {
           dia_semana: l.dia_semana,
           aberto: l.aberto,
           abre: l.aberto ? l.abre : null,
-          fecha: l.aberto ? l.fecha : null,
-          pausa_inicio: l.aberto && l.pausa ? l.pausa_inicio : null,
-          pausa_fim: l.aberto && l.pausa ? l.pausa_fim : null,
+          fecha: l.aberto ? normalizar(l.fecha) : null,
+          pausa_inicio: l.aberto && l.pausa ? normalizar(l.pausa_inicio) : null,
+          pausa_fim: l.aberto && l.pausa ? normalizar(l.pausa_fim) : null,
         }))
       );
       if (r.erro) setErro(r.erro);
@@ -97,9 +101,9 @@ export function HorarioHabitual({ inicial }: { inicial: TurnoSemanal[] }) {
 
               {l.aberto ? (
                 <div className="flex flex-wrap items-center gap-2 motion-safe:animate-entrar">
-                  <SeletorHora rotulo={`${NOMES[l.dia_semana]}: abre`} valor={l.abre} max="23:00" onMudar={(h) => mudar(l.dia_semana, { abre: h })} />
+                  <SeletorHora rotulo={`${NOMES[l.dia_semana]}: abre`} valor={l.abre} min={paraHora(ABRE_MIN)} max="23:30" onMudar={(h) => mudar(l.dia_semana, { abre: h })} />
                   <span className="text-texto-3">–</span>
-                  <SeletorHora rotulo={`${NOMES[l.dia_semana]}: última marcação`} valor={l.fecha} min={l.abre} onMudar={(h) => mudar(l.dia_semana, { fecha: h })} />
+                  <SeletorHora rotulo={`${NOMES[l.dia_semana]}: última marcação`} valor={l.fecha} min={l.abre} max={paraHora(ULTIMA_MAX)} onMudar={(h) => mudar(l.dia_semana, { fecha: h })} />
                   {!l.pausa && (
                     <button
                       type="button"

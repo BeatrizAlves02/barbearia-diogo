@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { formatarHora } from "@/lib/formatar";
 import {
   adicionarDias,
   formatarDiaCurto,
@@ -10,7 +9,7 @@ import {
   primeiroDoMes,
   segundaDaSemana,
 } from "@/lib/datas";
-import { minutos, paraHora } from "@/lib/horarios";
+import { minutos, normalizar, paraHora } from "@/lib/horarios";
 
 /**
  * Lê uma hora escrita à mão: "9" → 09:00 · "930" → 09:30 · "9:30" / "9h30" / "19h" → certo.
@@ -33,7 +32,8 @@ function lerHora(texto: string): string | null {
   return paraHora(h * 60 + m);
 }
 
-/* Escolher uma hora: − / + (de meia em meia hora) ou escrevendo diretamente */
+/* Escolher uma hora: − / + (de meia em meia hora) ou escrevendo diretamente.
+   Aceita horas "esticadas" (ex.: "25:00" = 01:00 do dia seguinte) → mostra "01:00" com "+1 DIA". */
 export function SeletorHora({
   valor,
   onMudar,
@@ -56,7 +56,12 @@ export function SeletorHora({
   function confirmar() {
     if (texto === null) return;
     const lida = lerHora(texto);
-    if (lida) onMudar(limitar(minutos(lida)));
+    if (lida) {
+      let m = minutos(lida);
+      // mais cedo que o mínimo, mas cabe no dia seguinte (madrugada)? ex.: escreve "1" depois de abrir às 9
+      if (m < minutos(min) && m + 1440 <= minutos(max)) m += 1440;
+      onMudar(limitar(m));
+    }
     else if (texto.trim()) {
       setInvalido(true);
       setTimeout(() => setInvalido(false), 600);
@@ -78,9 +83,9 @@ export function SeletorHora({
       <input
         aria-label={`${rotulo} (podes escrever, ex.: 9:30)`}
         inputMode="numeric"
-        value={texto ?? formatarHora(valor)}
+        value={texto ?? normalizar(valor)}
         onFocus={(e) => {
-          setTexto(formatarHora(valor));
+          setTexto(normalizar(valor));
           const campo = e.target;
           campo.select();
           requestAnimationFrame(() => campo.select()); // o Safari tira a seleção no clique
@@ -106,6 +111,11 @@ export function SeletorHora({
         }}
         className="w-14 bg-transparent text-center text-[15px] font-bold tabular-nums outline-none selection:bg-texto selection:text-tinta"
       />
+      {v >= 1440 && (
+        <span title="Dia seguinte" className="-ml-1 shrink-0 rounded-sm bg-texto px-1 py-0.5 text-[9px] font-extrabold tracking-[0.06em] text-tinta motion-safe:animate-entrar">
+          +1
+        </span>
+      )}
       <button type="button" aria-label={`${rotulo}: mais meia hora`} disabled={v >= minutos(max)} onClick={() => passo(30)} className={botao}>
         +
       </button>

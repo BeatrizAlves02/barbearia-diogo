@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { barbeiroComSessao } from "@/lib/gestao";
 import { adicionarDias, dataValida, inicioDoDiaEmLisboa, momentoEmLisboa } from "@/lib/datas";
-import { minutos } from "@/lib/horarios";
+import { ABRE_MIN, esticar, minutos, ULTIMA_MAX } from "@/lib/horarios";
 import { UUID } from "@/lib/validar";
 
 export type Resultado = { erro?: string; ok?: boolean };
@@ -23,13 +23,17 @@ function validarTurno(t: TurnoEnviado): string | null {
   if (!t.aberto) return null;
   if (!t.abre || !t.fecha || !HORA.test(t.abre) || !HORA.test(t.fecha)) return "Escolhe a hora de abrir e a da última marcação.";
   if (minutos(t.fecha) >= 1440 || minutos(t.abre) >= 1440) return "Horas inválidas.";
-  if (minutos(t.fecha) < minutos(t.abre)) return "A última marcação não pode ser antes da abertura.";
+  // última marcação mais cedo que a abertura = já é madrugada do dia seguinte (até às 06:00)
+  const a = minutos(t.abre);
+  const u = esticar(t.fecha, t.abre);
+  if (a < ABRE_MIN) return "Só se pode abrir a partir das 06:00.";
+  if (u > ULTIMA_MAX) return "A última marcação pode ser, no máximo, às 03:00 da madrugada.";
   if (t.pausa_inicio || t.pausa_fim) {
     if (!t.pausa_inicio || !t.pausa_fim || !HORA.test(t.pausa_inicio) || !HORA.test(t.pausa_fim)) return "Completa as horas da pausa.";
-    const pi = minutos(t.pausa_inicio);
-    const pf = minutos(t.pausa_fim);
+    const pi = esticar(t.pausa_inicio, t.abre);
+    const pf = esticar(t.pausa_fim, t.abre, true);
     if (pf <= pi) return "A pausa tem de acabar depois de começar.";
-    if (pi <= minutos(t.abre) || pf > minutos(t.fecha)) return "A pausa tem de ficar dentro do horário.";
+    if (pi <= a || pf > u) return "A pausa tem de ficar dentro do horário.";
   }
   return null;
 }

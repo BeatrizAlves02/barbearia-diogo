@@ -63,9 +63,12 @@ export function EscolherHorario({ barbeiro, nomeBarbeiro, servico, hoje, semanaI
   }, [vagas]);
 
   const vagasDoDia = diaSel ? vagasPorDia.get(diaSel) ?? [] : [];
+  const hora = (v: Vaga) => Number(horaEmLisboa(v.inicio).slice(0, 2));
   const grupos = [
-    { nome: "Manhã", vagas: vagasDoDia.filter((v) => Number(horaEmLisboa(v.inicio).slice(0, 2)) < 13) },
-    { nome: "Tarde", vagas: vagasDoDia.filter((v) => Number(horaEmLisboa(v.inicio).slice(0, 2)) >= 13) },
+    { nome: "Madrugada", vagas: vagasDoDia.filter((v) => hora(v) < 6) },
+    { nome: "Manhã", vagas: vagasDoDia.filter((v) => hora(v) >= 6 && hora(v) < 13) },
+    { nome: "Tarde", vagas: vagasDoDia.filter((v) => hora(v) >= 13 && hora(v) < 20) },
+    { nome: "Noite", vagas: vagasDoDia.filter((v) => hora(v) >= 20) },
   ];
 
   function mudarSemana(direcao: 1 | -1) {

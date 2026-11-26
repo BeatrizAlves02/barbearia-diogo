@@ -74,7 +74,7 @@ async function Conteudo() {
 
   // Marcações já feitas que ficam fora do horário atual → aviso (o Diogo decide se mantém ou cancela)
   const conflitos = ((marcacoes ?? []) as { id: string; inicio: string; fim: string; cliente_nome: string }[])
-    .map((m) => ({ ...m, dia: diaEmLisboa(m.inicio), motivo: foraDoHorario(m, turnoDoDia(diaEmLisboa(m.inicio), s, e), b) }))
+    .map((m) => ({ ...m, dia: diaEmLisboa(m.inicio), motivo: foraDoHorario(m, (d) => turnoDoDia(d, s, e), b) }))
     .filter((m) => m.motivo);
 
   return (
