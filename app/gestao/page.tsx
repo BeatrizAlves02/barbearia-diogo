@@ -15,7 +15,6 @@ import {
 } from "@/lib/datas";
 import { CabecalhoGestao } from "@/components/gestao/CabecalhoGestao";
 import { Agenda } from "@/components/gestao/Agenda";
-import { AtualizacaoAutomatica } from "@/components/gestao/AtualizacaoAutomatica";
 import { SessaoInativa } from "@/components/gestao/SessaoInativa";
 import type { MarcacaoAgenda } from "@/components/gestao/CartaoMarcacao";
 import { sair } from "./actions";
@@ -169,7 +168,6 @@ async function Conteudo({ searchParams }: Props) {
   return (
     <Moldura>
       <CabecalhoGestao nome={barbeiro.nome} />
-      <AtualizacaoAutomatica />
       <SessaoInativa />
       <Agenda hoje={hoje} dia={dia} grelha={grelha} folgas={folgas} marcacoes={marcacoes} erro={error?.message ?? null} />
     </Moldura>

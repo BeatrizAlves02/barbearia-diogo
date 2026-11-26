@@ -2,10 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import type { RealtimeChannel } from "@supabase/supabase-js";
 import { criarClienteBrowser } from "@/lib/supabase/browser";
 import { diaEmLisboa, formatarDiaCurto, horaEmLisboa } from "@/lib/datas";
 
 type Aviso = { id: number; titulo: string; texto: string; dia: string };
+type Ligacao = "a-ligar" | "ligado" | "erro";
 
 /**
  * Mantém a agenda atualizada sozinha:
@@ -16,6 +18,7 @@ type Aviso = { id: number; titulo: string; texto: string; dia: string };
 export function AtualizacaoAutomatica() {
   const router = useRouter();
   const [avisos, setAvisos] = useState<Aviso[]>([]);
+  const [ligacao, setLigacao] = useState<Ligacao>("a-ligar");
   const espera = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -26,46 +29,92 @@ export function AtualizacaoAutomatica() {
     };
 
     const supabase = criarClienteBrowser();
-    const canal = supabase
-      .channel("agenda-marcacoes")
-      .on("postgres_changes", { event: "*", schema: "public", table: "marcacoes" }, (alteracao) => {
-        atualizar();
-        if (alteracao.eventType === "INSERT") {
-          const nova = alteracao.new as { cliente_nome?: string; inicio?: string };
-          if (nova.inicio) {
-            const dia = diaEmLisboa(nova.inicio);
-            const aviso = {
-              id: Date.now(),
-              titulo: "Nova marcação",
-              texto: `${nova.cliente_nome ?? "Cliente"} · ${formatarDiaCurto(dia)}, ${horaEmLisboa(nova.inicio)}`,
-              dia,
-            };
-            setAvisos((a) => [...a, aviso]);
-            setTimeout(() => setAvisos((a) => a.filter((x) => x.id !== aviso.id)), 8000);
+    let canal: RealtimeChannel | null = null;
+    let ativo = true;
+
+    (async () => {
+      // Importante: ligar o tempo real JÁ com a sessão do barbeiro. Sem isto, a base de dados
+      // trata a ligação como "visitante" e, por segurança, não envia as marcações.
+      const { data } = await supabase.auth.getSession();
+      if (data.session) await supabase.realtime.setAuth(data.session.access_token);
+      if (!ativo) return;
+
+      canal = supabase
+        .channel("agenda-marcacoes")
+        .on("postgres_changes", { event: "*", schema: "public", table: "marcacoes" }, (alteracao) => {
+          atualizar();
+          if (alteracao.eventType === "INSERT") {
+            const nova = alteracao.new as { cliente_nome?: string; inicio?: string };
+            if (nova.inicio) {
+              const dia = diaEmLisboa(nova.inicio);
+              const aviso = {
+                id: Date.now(),
+                titulo: "Nova marcação",
+                texto: `${nova.cliente_nome ?? "Cliente"} · ${formatarDiaCurto(dia)}, ${horaEmLisboa(nova.inicio)}`,
+                dia,
+              };
+              setAvisos((lista) => [...lista, aviso]);
+              setTimeout(() => setAvisos((lista) => lista.filter((x) => x.id !== aviso.id)), 8000);
+            }
           }
-        }
-      })
-      .subscribe();
+        })
+        .subscribe((estado, erro) => {
+          if (estado === "SUBSCRIBED") setLigacao("ligado");
+          else if (estado === "CHANNEL_ERROR" || estado === "TIMED_OUT" || estado === "CLOSED") {
+            setLigacao("erro");
+            if (erro) console.warn("Tempo real:", estado, erro.message);
+          }
+        });
+    })();
+
+    // A sessão é renovada de hora a hora: o tempo real passa a usar a nova
+    const { data: escuta } = supabase.auth.onAuthStateChange((_evento, sessao) => {
+      if (sessao) supabase.realtime.setAuth(sessao.access_token);
+    });
 
     // Ao voltar à app depois de estar noutra aba / com o ecrã bloqueado
     const aoVoltar = () => {
       if (document.visibilityState === "visible") atualizar();
     };
     document.addEventListener("visibilitychange", aoVoltar);
-    // Rede de segurança: atualiza também a cada 2 minutos
-    const intervalo = setInterval(atualizar, 120_000);
+    // Rede de segurança: atualiza também a cada 30 segundos
+    const intervalo = setInterval(atualizar, 30_000);
 
     return () => {
-      supabase.removeChannel(canal);
+      ativo = false;
+      if (canal) supabase.removeChannel(canal);
+      escuta.subscription.unsubscribe();
       document.removeEventListener("visibilitychange", aoVoltar);
       clearInterval(intervalo);
       if (espera.current) clearTimeout(espera.current);
     };
   }, [router]);
 
-  if (!avisos.length) return null;
-
   return (
+    <>
+      {/* Indicador: a agenda está ligada em tempo real? */}
+      <span
+        title={
+          ligacao === "ligado"
+            ? "A agenda atualiza-se sozinha"
+            : ligacao === "erro"
+              ? "Sem ligação em tempo real — a agenda atualiza-se a cada 30 segundos"
+              : "A ligar…"
+        }
+        className="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-borda px-2.5 py-1.5 text-[9px] font-bold tracking-[0.16em] text-texto-2"
+      >
+        <span className="relative flex size-1.5">
+          {ligacao === "ligado" && <span className="absolute inset-0 rounded-full bg-texto motion-safe:animate-ping" />}
+          <span
+            className={`relative size-1.5 rounded-full ${
+              ligacao === "ligado" ? "bg-texto" : ligacao === "erro" ? "bg-red-400" : "bg-desativado"
+            }`}
+          />
+        </span>
+        {ligacao === "ligado" ? "AO VIVO" : ligacao === "erro" ? "SEM LIGAÇÃO" : "A LIGAR"}
+      </span>
+
+      {avisos.length > 0 && (
     <div aria-live="polite" className="fixed inset-x-0 top-4 z-50 mx-auto flex max-w-sm flex-col gap-2 px-4 lg:right-6 lg:left-auto lg:mx-0">
       {avisos.map((a) => (
         <button
@@ -89,5 +138,7 @@ export function AtualizacaoAutomatica() {
         </button>
       ))}
     </div>
+      )}
+    </>
   );
 }
