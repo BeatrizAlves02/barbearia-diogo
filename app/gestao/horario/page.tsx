@@ -121,7 +121,10 @@ async function Conteudo() {
 
       <div className="mt-6 flex flex-col gap-5 lg:mt-8 lg:grid lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)] lg:items-start lg:gap-10">
         <HorarioHabitual key={JSON.stringify(s)} inicial={s} />
-        <FolgasEFerias semanal={s} especiais={e} bloqueios={b} hoje={hoje} />
+        <div className="flex flex-col gap-5">
+          <FolgasEFerias tipo="fechar" semanal={s} especiais={e} bloqueios={b} hoje={hoje} />
+          <FolgasEFerias tipo="abrir" semanal={s} especiais={e} bloqueios={b} hoje={hoje} />
+        </div>
       </div>
     </Moldura>
   );

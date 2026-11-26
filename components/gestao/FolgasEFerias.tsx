@@ -19,18 +19,20 @@ import { Alternador, SeletorData, SeletorHora } from "./ControlosHorario";
 type Escolha = "fecharDia" | "fecharHoras" | "abrirDia" | "abrirHoras";
 
 export function FolgasEFerias({
+  tipo,
   semanal,
   especiais,
   bloqueios,
   hoje,
 }: {
+  tipo: "fechar" | "abrir"; // cada um tem a sua caixa
   semanal: TurnoSemanal[];
   especiais: TurnoEspecial[];
   bloqueios: Bloqueio[];
   hoje: string;
 }) {
   const [dias, setDias] = useState<string[]>([]);
-  const [abrir, setAbrir] = useState(false);
+  const abrir = tipo === "abrir";
   const [soHoras, setSoHoras] = useState(false);
   const [mensagem, setMensagem] = useState("");
   const [de, setDe] = useState("14:00"); // fechar umas horas
@@ -86,7 +88,6 @@ export function FolgasEFerias({
 
   function mudarEscolha(novoAbrir: boolean, novoSoHoras: boolean) {
     const nova: Escolha = novoAbrir ? (novoSoHoras ? "abrirHoras" : "abrirDia") : novoSoHoras ? "fecharHoras" : "fecharDia";
-    setAbrir(novoAbrir);
     setSoHoras(novoSoHoras);
     setErro(null);
     // tira os dias que deixaram de fazer sentido
@@ -142,7 +143,7 @@ export function FolgasEFerias({
   // Lista única, por data
   const fimTexto = (iso: string) => (horaEmLisboa(iso) === "00:00" ? "24:00" : horaEmLisboa(iso));
   const itens = [
-    ...especiais.map((d) => ({
+    ...especiais.filter((d) => d.aberto === abrir).map((d) => ({
       chave: `d${d.data}`,
       data: d.data,
       titulo: formatarDiaCurto(d.data),
@@ -151,7 +152,7 @@ export function FolgasEFerias({
         : "Fechado o dia todo",
       apagar: () => apagarDiaEspecial(d.data),
     })),
-    ...bloqueios.map((b) => {
+    ...(abrir ? [] : bloqueios).map((b) => {
       const primeiro = diaEmLisboa(b.inicio);
       if (!diaInteiro(b))
         return {
@@ -177,30 +178,24 @@ export function FolgasEFerias({
   return (
     <section style={{ animationDelay: "80ms" }} className="rounded-lg border border-borda bg-superficie motion-safe:animate-entrar">
       <div className="flex flex-col gap-1 border-b border-borda p-5 lg:p-6">
-        <h2 className="text-sm font-extrabold tracking-[0.16em] font-stretch-125%">FOLGAS E FÉRIAS</h2>
-        <p className="text-sm text-texto-3">Fecha dias, abre folgas ou acrescenta horas.</p>
+        <h2 className="text-sm font-extrabold tracking-[0.16em] font-stretch-125%">{abrir ? "ABRIR" : "FECHAR"}</h2>
+        <p className="text-sm text-texto-3">
+          {abrir ? "Trabalhar numa folga ou fazer horas a mais." : "Folgas, férias ou umas horas em que não trabalhas."}
+        </p>
       </div>
 
       <div className="flex flex-col gap-4 p-5 lg:p-6">
         <div className="flex flex-col gap-1.5">
-          <span className="text-[10px] tracking-[0.22em] text-texto-3">1. O QUE QUERES FAZER?</span>
+          <span className="text-[10px] tracking-[0.22em] text-texto-3">1. {abrir ? "ABRIR…" : "FECHAR…"}</span>
           <Alternador
-            valor={abrir ? "abrir" : "fechar"}
-            onMudar={(v) => mudarEscolha(v === "abrir", soHoras)}
+            valor={soHoras ? "horas" : "dia"}
+            onMudar={(v) => mudarEscolha(abrir, v === "horas")}
             opcoes={[
-              { valor: "fechar", rotulo: "FECHAR" },
-              { valor: "abrir", rotulo: "ABRIR" },
+              { valor: "dia", rotulo: "O DIA TODO" },
+              { valor: "horas", rotulo: abrir ? "HORAS A MAIS" : "SÓ UMAS HORAS" },
             ]}
           />
         </div>
-        <Alternador
-          valor={soHoras ? "horas" : "dia"}
-          onMudar={(v) => mudarEscolha(abrir, v === "horas")}
-          opcoes={[
-            { valor: "dia", rotulo: "O DIA TODO" },
-            { valor: "horas", rotulo: "SÓ UMAS HORAS" },
-          ]}
-        />
 
         <SeletorData
           key={escolha}
@@ -243,7 +238,6 @@ export function FolgasEFerias({
 
         {escolha === "abrirHoras" && (
           <div className="flex flex-col gap-1.5 motion-safe:animate-entrar">
-            <span className="text-[10px] tracking-[0.22em] text-texto-3">HORAS A MAIS</span>
             <div className="flex flex-wrap items-center gap-2">
               <span className={rotuloHora}>DAS</span>
               <SeletorHora rotulo="Abre às" valor={abre} min={paraHora(ABRE_MIN)} max="23:30" onMudar={(h) => { setAbre(h); if (minutos(fecha) < minutos(h)) setFecha(h); }} />
