@@ -5,7 +5,7 @@ import { abrirDias, adicionarFerias, apagarDiaEspecial, apagarFerias, fecharHora
 import { classesBotaoPrimario } from "@/components/BotaoPrimario";
 import { formatarHora } from "@/lib/formatar";
 import { adicionarDias, diaEmLisboa, formatarDiaCurto, horaEmLisboa } from "@/lib/datas";
-import { curta, diaInteiro, minutos, normalizar, paraHora, turnoDoDia, ULTIMA_MAX, ABRE_MIN, type Bloqueio, type TurnoEspecial, type TurnoSemanal } from "@/lib/horarios";
+import { curta, diaInteiro, esticar, minutos, normalizar, paraHora, turnoDoDia, ULTIMA_MAX, ABRE_MIN, type Bloqueio, type TurnoEspecial, type TurnoSemanal } from "@/lib/horarios";
 import { feriado } from "@/lib/feriados";
 import { Alternador, SeletorData, SeletorHora } from "./ControlosHorario";
 
@@ -43,22 +43,23 @@ export function FolgasEFerias({
   const ajuda: Record<Escolha, string> = {
     dia: `Ninguém pode marcar ${nesses}.`,
     horas: `Ninguém pode marcar entre estas horas. O resto do dia fica normal.`,
-    aberto: `${n > 1 ? "Nestes dias" : "Neste dia"} trabalhas a estas horas.`,
+    aberto: `${n > 1 ? "Nestes dias" : "Neste dia"} trabalhas a estas horas (serve para abrir uma folga ou para mudar as horas).`,
   };
 
   // O Diogo trabalha nesse dia? (horário habitual + dias mudados + feriados + férias de dia inteiro)
   const deFerias = (d: string) => bloqueios.some((b) => diaInteiro(b) && diaEmLisboa(b.inicio) <= d && d < diaEmLisboa(b.fim));
   const trabalha = (d: string) => turnoDoDia(d, semanal, especiais).aberto && !deFerias(d);
-  // Só se pode ABRIR um dia que está fechado, e FECHAR um dia que está aberto.
-  // (Dias de férias já marcadas: para abrir, apaga primeiro as férias na lista em baixo.)
-  const desativar = (d: string) => (escolha === "aberto" ? trabalha(d) || deFerias(d) : !trabalha(d));
+  // ABRIR: qualquer dia (abre uma folga ou muda as horas de um dia aberto), menos dias de férias
+  //        (para esses, apaga primeiro as férias na lista em baixo).
+  // FECHAR: só dias em que está aberto.
+  const desativar = (d: string) => (escolha === "aberto" ? deFerias(d) : !trabalha(d));
 
   function mudarEscolha(novoAberto: boolean, novoSoHoras: boolean) {
     setAberto(novoAberto);
     setSoHoras(novoSoHoras);
     setErro(null);
     // tira os dias que deixaram de fazer sentido (ex.: estava a fechar e passou a abrir)
-    setDias((ds) => ds.filter((d) => (novoAberto ? !trabalha(d) && !deFerias(d) : trabalha(d))));
+    setDias((ds) => ds.filter((d) => (novoAberto ? !deFerias(d) : trabalha(d))));
   }
 
   function guardar() {
@@ -115,7 +116,7 @@ export function FolgasEFerias({
     <section style={{ animationDelay: "80ms" }} className="rounded-lg border border-borda bg-superficie motion-safe:animate-entrar">
       <div className="flex flex-col gap-1 border-b border-borda p-5 lg:p-6">
         <h2 className="text-sm font-extrabold tracking-[0.16em] font-stretch-125%">FOLGAS E FÉRIAS</h2>
-        <p className="text-sm text-texto-3">Fecha dias em que trabalhas, ou abre dias em que estás fechado.</p>
+        <p className="text-sm text-texto-3">Fecha dias, abre folgas ou muda as horas só de alguns dias.</p>
       </div>
 
       <div className="flex flex-col gap-4 p-5 lg:p-6">
@@ -126,7 +127,7 @@ export function FolgasEFerias({
             onMudar={(v) => mudarEscolha(v === "aberto", soHoras)}
             opcoes={[
               { valor: "fechado", rotulo: "FECHAR" },
-              { valor: "aberto", rotulo: "ABRIR" },
+              { valor: "aberto", rotulo: "ABRIR / MUDAR" },
             ]}
           />
         </div>
@@ -149,12 +150,20 @@ export function FolgasEFerias({
           dias={dias}
           min={hoje}
           onMudar={(ds) => {
+            // ao escolher o 1.º dia num dia já aberto, começa com as horas que já tem (para só as ajustar)
+            if (escolha === "aberto" && !dias.length && ds.length) {
+              const t = turnoDoDia(ds[0], semanal, especiais);
+              if (t.aberto && t.abre && t.fecha) {
+                setAbre(curta(t.abre)!);
+                setFecha(paraHora(esticar(curta(t.fecha)!, curta(t.abre)!)));
+              }
+            }
             setDias(ds);
             setErro(null);
           }}
           etiqueta={(d) => feriado(d)?.nome}
           desativar={desativar}
-          dica={escolha === "aberto" ? "Só dias em que estás fechado" : "Só dias em que estás aberto"}
+          dica={escolha === "aberto" ? "Folgas ou dias para mudar as horas" : "Só dias em que estás aberto"}
         />
 
         {!aberto && (
