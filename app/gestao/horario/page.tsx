@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { barbeiroComSessao } from "@/lib/gestao";
 import { hojeEmLisboa } from "@/lib/formatar";
-import { diaEmLisboa, formatarDiaCurto, horaEmLisboa } from "@/lib/datas";
+import { adicionarDias, diaEmLisboa, formatarDiaCurto, horaEmLisboa } from "@/lib/datas";
 import { foraDoHorario, turnoDoDia, type Bloqueio, type TurnoEspecial, type TurnoSemanal } from "@/lib/horarios";
 import { CabecalhoGestao } from "@/components/gestao/CabecalhoGestao";
 import { HorarioHabitual } from "@/components/gestao/HorarioHabitual";
@@ -50,7 +50,7 @@ async function Conteudo() {
       .from("horario_dia")
       .select("data, aberto, abre, fecha, pausa_inicio, pausa_fim, nota")
       .eq("barbeiro_id", barbeiro.id)
-      .gte("data", hoje)
+      .gte("data", adicionarDias(hoje, -1)) // inclui ontem: a noite de ontem pode ir até às 03:00 de hoje
       .order("data"),
     supabase
       .from("bloqueios")

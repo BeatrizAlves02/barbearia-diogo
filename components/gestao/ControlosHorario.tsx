@@ -197,6 +197,7 @@ type PropsData =
       etiqueta?: (dia: string) => string | undefined;
       desativar?: (dia: string) => boolean; // dias que não se podem escolher
       dica?: string; // texto por baixo do calendário
+      hoje?: string; // dia com contorno (por defeito, o mínimo)
     };
 
 /** Junta dias seguidos: ["2026-12-22","2026-12-23","2026-12-27"] → [["2026-12-22","2026-12-23"],["2026-12-27","2026-12-27"]] */
@@ -221,6 +222,7 @@ export function SeletorData(props: PropsData) {
   const { min, rotulo, etiqueta } = props;
   const desativar = props.modo === "varios" ? props.desativar : undefined;
   const pode = (d: string) => d >= min && !desativar?.(d);
+  const diaDeHoje = (props.modo === "varios" && props.hoje) || min;
   const [aberto, setAberto] = useState(false);
   const inicial = props.modo === "dia" ? props.valor : [...props.dias].sort()[0];
   const [mes, setMes] = useState(primeiroDoMes(inicial || min));
@@ -395,7 +397,7 @@ export function SeletorData(props: PropsData) {
                     escolhido ? "bg-texto text-tinta" : "rounded hover:bg-superficie-2"
                   } ${escolhido && !antes ? "rounded-l" : ""} ${escolhido && !depois ? "rounded-r" : ""} ${
                     desativado ? "text-texto-3/30" : foraDoMes && !escolhido ? "text-texto-3" : ""
-                  } ${d === min && !escolhido ? "ring-1 ring-texto-3 ring-inset" : ""}`}
+                  } ${d === diaDeHoje && !escolhido ? "ring-1 ring-texto-3 ring-inset" : ""}`}
                 >
                   {numeroDoDia(d)}
                   {nota && !desativado && (

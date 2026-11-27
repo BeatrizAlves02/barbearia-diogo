@@ -74,15 +74,30 @@ export function FolgasEFerias({
     };
   })();
 
+  const ontem = adicionarDias(hoje, -1);
   const temHoje = dias.includes(hoje);
+  const temOntem = dias.includes(ontem);
+  // ontem só se escolhe para horas a mais pela madrugada dentro (antes das 03:00) → começa a seguir a agora (+24 h)
   const minFechar = temHoje ? Math.max(ABRE_MIN, proximaHoje) : ABRE_MIN;
-  const minAbrir = temHoje ? Math.max(ABRE_MIN, proximaHoje) : ABRE_MIN;
+  const minAbrir = temOntem ? proximaHoje + 1440 : temHoje ? Math.max(ABRE_MIN, proximaHoje) : ABRE_MIN;
+  const madrugada = agora !== null && agora < ULTIMA_MAX - 1440 - 30; // ainda dá para acrescentar horas à noite de ontem
+  // ontem ainda não vai até às 03:00? (se já vai, não há nada a acrescentar)
+  const turnoOntem = turnoDoDia(ontem, semanal, especiais);
+  const podeEsticarOntem =
+    !!turnoOntem.abre && !!turnoOntem.fecha && esticar(curta(turnoOntem.fecha)!, curta(turnoOntem.abre)!) < ULTIMA_MAX;
   // valores usados (nunca antes do mínimo)
   const de = paraHora(Math.max(minutos(deSel), minFechar));
   const ate = paraHora(Math.max(minutos(ateSel), minutos(de) + 30));
   const abre = paraHora(Math.max(minutos(abreSel), minAbrir));
   const fecha = paraHora(Math.max(minutos(fechaSel), minutos(abre)));
-  const avisoHoje = temHoje && agora !== null && proximaHoje > ABRE_MIN ? `Hoje só a partir das ${normalizar(paraHora(proximaHoje))}.` : null;
+  const avisoHoje =
+    agora === null
+      ? null
+      : temOntem
+        ? `Ontem (pela madrugada dentro) só a partir das ${normalizar(paraHora(proximaHoje))}.`
+        : temHoje && proximaHoje > ABRE_MIN
+          ? `Hoje só a partir das ${normalizar(paraHora(proximaHoje))}.`
+          : null;
 
   const escolha: Escolha = abrir ? (soHoras ? "abrirHoras" : "abrirDia") : soHoras ? "fecharHoras" : "fecharDia";
   const n = dias.length;
@@ -101,7 +116,9 @@ export function FolgasEFerias({
   const serve = (e: Escolha, d: string) =>
     e === "abrirDia"
       ? !trabalha(d) && !deFerias(d)
-      : trabalha(d) && !(e === "fecharHoras" && d === hoje && proximaHoje > 23 * 60 + 30);
+      : d === ontem
+        ? e === "abrirHoras" && madrugada && trabalha(d) && podeEsticarOntem
+        : trabalha(d) && !(e === "fecharHoras" && d === hoje && proximaHoje > 23 * 60 + 30);
 
   /** Horas a mais: começam logo a seguir à última marcação desse dia (ex.: 19:00 → das 20:00 às 21:00) */
   function horasAMaisDe(d: string) {
@@ -170,7 +187,15 @@ export function FolgasEFerias({
   // Lista única, por data
   const fimTexto = (iso: string) => (horaEmLisboa(iso) === "00:00" ? "24:00" : horaEmLisboa(iso));
   const itens = [
-    ...especiais.filter((d) => d.aberto === abrir).map((d) => ({
+    ...especiais
+      .filter((d) => d.aberto === abrir)
+      // de ontem, só se a noite ainda está a decorrer (ex.: aberto até às 03:00 de hoje)
+      .filter(
+        (d) =>
+          d.data >= hoje ||
+          (d.data === ontem && d.aberto && !!d.abre && !!d.fecha && curta(d.fecha)! < curta(d.abre)! && (agora === null || agora < minutos(curta(d.fecha)!)))
+      )
+      .map((d) => ({
       chave: `d${d.data}`,
       data: d.data,
       titulo: formatarDiaCurto(d.data),
@@ -229,7 +254,8 @@ export function FolgasEFerias({
           modo="varios"
           rotulo="2. DIAS (TOCA OU ARRASTA)"
           dias={dias}
-          min={hoje}
+          min={escolha === "abrirHoras" && madrugada ? ontem : hoje}
+          hoje={hoje}
           onMudar={(ds) => {
             // horas a mais: ao escolher o 1.º dia, as horas começam a seguir à última marcação dele
             if (escolha === "abrirHoras" && !dias.length && ds.length) horasAMaisDe(ds[0]);
