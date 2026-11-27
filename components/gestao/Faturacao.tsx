@@ -57,8 +57,8 @@ export function Faturacao({ vista, de, ate, hoje, anteriorData, seguinteData, re
   return (
     <div className="mt-6 flex flex-col gap-6 lg:mt-8">
       {/* ---------- Período (igual em todos os ecrãs: título → tipo de período → setas) ---------- */}
-      <div className="flex flex-col gap-4 motion-safe:animate-entrar">
-        <div>
+      <div className="flex flex-col gap-4 motion-safe:animate-entrar lg:flex-row lg:items-end lg:justify-between lg:gap-10">
+        <div className="min-w-0">
           <span className="text-[10px] tracking-[0.22em] text-texto-3">FATURAÇÃO</span>
           <h1 key={de + vista} className="mt-1 text-3xl leading-none font-extrabold uppercase font-stretch-125% motion-safe:animate-entrar lg:text-5xl">
             {tituloDoPeriodo(vista, de, ate)}
@@ -66,9 +66,9 @@ export function Faturacao({ vista, de, ate, hoje, anteriorData, seguinteData, re
           {relativo && <p key={`r${de}`} className="mt-1.5 text-sm text-texto-3 motion-safe:animate-entrar">{relativo}</p>}
         </div>
 
-        {/* Tipo de período e setas lado a lado (no telemóvel, um por baixo do outro) */}
-        <div className="flex flex-col gap-3 sm:flex-row">
-        <div className="flex w-full gap-1 rounded-full border border-borda p-1 sm:max-w-md">
+        {/* Tipo de período em cima, setas por baixo — no computador ficam ao lado do título */}
+        <div className="flex w-full max-w-md shrink-0 flex-col gap-3 lg:w-[26rem]">
+        <div className="flex w-full gap-1 rounded-full border border-borda p-1">
           {(Object.keys(ROTULOS) as Vista[]).map((v) => (
             <button
               key={v}
@@ -85,7 +85,7 @@ export function Faturacao({ vista, de, ate, hoje, anteriorData, seguinteData, re
         </div>
 
         {/* Andar entre períodos: sempre no mesmo sítio e com o mesmo tamanho (nada salta) */}
-        <div className="grid w-full grid-cols-[auto_1fr_auto] items-center gap-1 rounded-full border border-borda p-1 sm:max-w-sm">
+        <div className="grid w-full grid-cols-[auto_1fr_auto] items-center gap-1 rounded-full border border-borda p-1">
           <button
             type="button"
             aria-label="Período anterior"

@@ -75,7 +75,7 @@ export function foraDoHorario(
   const ini = new Date(m.inicio).getTime();
   const fim = new Date(m.fim).getTime();
   const bloqueio = bloqueios.find((b) => new Date(b.inicio).getTime() < fim && new Date(b.fim).getTime() > ini);
-  if (bloqueio) return diaInteiro(bloqueio) ? "Férias" : "Horas fechadas";
+  if (bloqueio) return diaInteiro(bloqueio) ? "Folga" : "Horas fechadas";
 
   const dia = diaEmLisboa(m.inicio);
   const i = minutos(horaEmLisboa(m.inicio));
