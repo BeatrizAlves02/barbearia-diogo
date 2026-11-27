@@ -66,7 +66,9 @@ export function Faturacao({ vista, de, ate, hoje, anteriorData, seguinteData, re
           {relativo && <p key={`r${de}`} className="mt-1.5 text-sm text-texto-3 motion-safe:animate-entrar">{relativo}</p>}
         </div>
 
-        <div className="flex w-full max-w-md gap-1 rounded-full border border-borda p-1">
+        {/* Tipo de período e setas lado a lado (no telemóvel, um por baixo do outro) */}
+        <div className="flex flex-col gap-3 sm:flex-row">
+        <div className="flex w-full gap-1 rounded-full border border-borda p-1 sm:max-w-md">
           {(Object.keys(ROTULOS) as Vista[]).map((v) => (
             <button
               key={v}
@@ -83,7 +85,7 @@ export function Faturacao({ vista, de, ate, hoje, anteriorData, seguinteData, re
         </div>
 
         {/* Andar entre períodos: sempre no mesmo sítio e com o mesmo tamanho (nada salta) */}
-        <div className="grid w-full max-w-md grid-cols-[auto_1fr_auto] items-center gap-1 rounded-full border border-borda p-1">
+        <div className="grid w-full grid-cols-[auto_1fr_auto] items-center gap-1 rounded-full border border-borda p-1 sm:max-w-sm">
           <button
             type="button"
             aria-label="Período anterior"
@@ -109,6 +111,7 @@ export function Faturacao({ vista, de, ate, hoje, anteriorData, seguinteData, re
           >
             <Seta para="dir" />
           </button>
+        </div>
         </div>
       </div>
 

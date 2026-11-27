@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { IconeVisto } from "@/components/icones";
 import {
@@ -47,8 +47,40 @@ export function Agenda({ hoje, dia: diaPedido, grelha, folgas, feriados, marcaco
   const params = useSearchParams();
   const doEndereco = params.get("dia") ?? hoje;
   const dia = dataValida(doEndereco) && doEndereco.slice(0, 7) === mesCarregado ? doEndereco : diaPedido;
+  // ?marcacao=… (vindo do aviso do Horário) → leva o ecrã direto a essa marcação e destaca-a uns segundos
+  const destacada = params.get("marcacao");
+  const [realce, setRealce] = useState<string | null>(null);
+  useEffect(() => {
+    if (!destacada) return;
+    const ir = setTimeout(() => {
+      document.getElementById(`marcacao-${destacada}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+      setRealce(destacada);
+    }, 350);
+    const apagar = setTimeout(() => setRealce(null), 3500);
+    return () => {
+      clearTimeout(ir);
+      clearTimeout(apagar);
+    };
+  }, [destacada, dia]);
 
-  const toque = useRef<{ x: number; y: number } | null>(null); // para arrastar a semana no telemóvel
+  // Faixa de dias do telemóvel: 3 meses para trás e 6 para a frente; o dia escolhido fica sempre à vista
+  const faixa = useRef<HTMLOListElement>(null);
+  const primeiraVez = useRef(true);
+  const centro = dia < hoje ? dia : hoje;
+  const diasDaFaixa = useMemo(() => {
+    const lista: string[] = [];
+    for (let d = adicionarDias(centro, -90); d <= adicionarDias(centro, 180); d = adicionarDias(d, 1)) lista.push(d);
+    return lista;
+  }, [centro]);
+  useEffect(() => {
+    const el = faixa.current?.querySelector<HTMLElement>(`[data-dia="${dia}"]`);
+    const caixa = faixa.current;
+    if (!el || !caixa) return;
+    // põe o dia escolhido como 3.º visível (dá para ver os dias antes e depois)
+    const alvo = el.offsetLeft - caixa.offsetLeft - 2 * (el.offsetWidth + 6) - 20;
+    caixa.scrollTo({ left: Math.max(0, alvo), behavior: primeiraVez.current ? "instant" : "smooth" });
+    primeiraVez.current = false;
+  }, [dia, diasDaFaixa]);
 
   function irPara(d: string) {
     const url = d === hoje ? "/gestao" : `/gestao?dia=${d}`;
@@ -74,7 +106,8 @@ export function Agenda({ hoje, dia: diaPedido, grelha, folgas, feriados, marcaco
     const ativas = (porDia.get(d) ?? []).filter((m) => m.estado !== "cancelada");
     const fechado = ativas.length > 0 && ativas.every((m) => m.estado === "concluida" || m.estado === "faltou");
     const porFechar = ativas.some((m) => m.passou && (m.estado === "confirmada" || m.estado === "chegou"));
-    return { n: ativas.length, fechado, porFechar, folga: diasDeFolga.has(d) };
+    // folga só se não houver marcações (se ele fechou o dia mas atendeu clientes, não é folga)
+    return { n: ativas.length, fechado, porFechar, folga: diasDeFolga.has(d) && ativas.length === 0 };
   }
 
   const doDia = porDia.get(dia) ?? [];
@@ -94,9 +127,8 @@ export function Agenda({ hoje, dia: diaPedido, grelha, folgas, feriados, marcaco
   ].filter(Boolean) as string[];
   const progresso = doDia.length ? Math.round((fechadas.length / doDia.length) * 100) : 0;
   const diaFechado = resumo(dia).fechado;
-  const diaDeFolga = diasDeFolga.has(dia);
+  const diaDeFolga = diasDeFolga.has(dia) && doDia.every((m) => m.estado === "cancelada");
 
-  const semana = Array.from({ length: 7 }, (_, i) => adicionarDias(segundaDaSemana(dia), i));
   const grelhaDoMes = grelha.filter((d) => d >= segundaDaSemana(primeiroDoMes(dia)));
 
   return (
@@ -138,42 +170,30 @@ export function Agenda({ hoje, dia: diaPedido, grelha, folgas, feriados, marcaco
             )}
           </div>
 
-          {/* Telemóvel: faixa da semana */}
-          <div className={`flex items-center gap-1.5 transition-opacity lg:hidden ${aNavegar ? "opacity-50" : ""}`}>
-            <button type="button" onClick={() => irPara(adicionarDias(dia, -7))} aria-label="Semana anterior" className={`${botaoSeta} h-16 w-8 rounded`}>
-              <Seta para="esq" />
-            </button>
+          {/* Telemóvel e tablet: faixa de dias que se arrasta para o lado (sem setas) */}
+          <div className={`relative -mx-5 transition-opacity lg:hidden ${aNavegar ? "opacity-50" : ""}`}>
             <ol
-              key={semana[0]}
-              className="grid flex-1 touch-pan-y grid-cols-7 gap-1.5 motion-safe:animate-entrar"
-              // arrastar para o lado: esquerda → semana seguinte, direita → semana anterior
-              onTouchStart={(e) => (toque.current = { x: e.touches[0].clientX, y: e.touches[0].clientY })}
-              onTouchEnd={(e) => {
-                const t = toque.current;
-                toque.current = null;
-                if (!t) return;
-                const dx = e.changedTouches[0].clientX - t.x;
-                const dy = e.changedTouches[0].clientY - t.y;
-                if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) irPara(adicionarDias(dia, dx < 0 ? 7 : -7));
-              }}
+              ref={faixa}
+              className="flex snap-x snap-mandatory gap-1.5 overflow-x-auto scroll-px-5 px-5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             >
-              {semana.map((d) => {
+              {diasDaFaixa.map((d) => {
                 const r = resumo(d);
                 const sel = d === dia;
                 return (
-                  <li key={d}>
+                  <li key={d} data-dia={d} className="w-[calc((100%-2.5rem-9*0.375rem)/7.5)] min-w-11 shrink-0 snap-start">
                     <button
                       type="button"
                       onClick={() => irPara(d)}
                       aria-current={sel ? "date" : undefined}
+                      aria-label={formatarDiaLongo(d)}
                       className={`flex h-16 w-full flex-col items-center justify-center gap-0.5 rounded border transition-[background-color,border-color,color,transform] duration-200 active:scale-90 ${
                         sel
                           ? "border-texto bg-texto text-tinta"
-                          : `border-borda hover:-translate-y-0.5 hover:border-borda-forte hover:bg-superficie ${r.folga ? `${RISCAS} text-desativado` : ""}`
+                          : `border-borda hover:border-borda-forte hover:bg-superficie ${r.folga ? `${RISCAS} text-desativado` : ""}`
                       }`}
                     >
                       <span className={`text-[9px] tracking-[0.14em] ${sel ? "" : d === hoje ? "font-bold text-texto" : "text-texto-3"}`}>
-                        {diaDaSemanaCurto(d)}
+                        {numeroDoDia(d) === "1" && !sel ? MESES_CURTOS[Number(d.slice(5, 7)) - 1] : diaDaSemanaCurto(d)}
                       </span>
                       <span className="text-lg font-extrabold leading-none font-stretch-125%">{numeroDoDia(d)}</span>
                       <Indicador r={r} sel={sel} />
@@ -182,9 +202,9 @@ export function Agenda({ hoje, dia: diaPedido, grelha, folgas, feriados, marcaco
                 );
               })}
             </ol>
-            <button type="button" onClick={() => irPara(adicionarDias(dia, 7))} aria-label="Semana seguinte" className={`${botaoSeta} h-16 w-8 rounded`}>
-              <Seta para="dir" />
-            </button>
+            {/* esbatido nas pontas, para se perceber que continua */}
+            <span className="pointer-events-none absolute inset-y-0 left-0 w-5 bg-gradient-to-r from-bg to-transparent" aria-hidden="true" />
+            <span className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-bg to-transparent" aria-hidden="true" />
           </div>
 
           {/* Computador: calendário do mês */}
@@ -286,7 +306,7 @@ export function Agenda({ hoje, dia: diaPedido, grelha, folgas, feriados, marcaco
         ) : (
           <ul key={`lista-${dia}`} className="mt-4 flex flex-col gap-3">
             {doDia.map((m, i) => (
-              <CartaoMarcacao key={m.id} m={m} atraso={i * 60} />
+              <CartaoMarcacao key={m.id} m={m} atraso={i * 60} destaque={realce === m.id} />
             ))}
           </ul>
         )}
@@ -296,6 +316,7 @@ export function Agenda({ hoje, dia: diaPedido, grelha, folgas, feriados, marcaco
 }
 
 /* Riscas diagonais discretas para os dias de folga */
+const MESES_CURTOS = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"];
 const RISCAS = "bg-[repeating-linear-gradient(135deg,transparent_0_5px,rgba(255,255,255,0.06)_5px_7px)]";
 
 /* Por baixo do número do dia: ✓ se está fechado, senão quantas marcações tem (com ponto se há por fechar) */

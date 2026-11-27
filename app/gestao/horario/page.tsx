@@ -72,6 +72,8 @@ async function Conteudo() {
   const e = (especiais ?? []) as TurnoEspecial[];
   const b = (bloqueios ?? []) as Bloqueio[];
 
+  const futuras = (marcacoes ?? []) as { id: string; inicio: string; fim: string; cliente_nome: string }[];
+
   // Marcações já feitas que ficam fora do horário atual → aviso (o Diogo decide se mantém ou cancela)
   const conflitos = ((marcacoes ?? []) as { id: string; inicio: string; fim: string; cliente_nome: string }[])
     .map((m) => ({ ...m, dia: diaEmLisboa(m.inicio), motivo: foraDoHorario(m, (d) => turnoDoDia(d, s, e), b) }))
@@ -99,7 +101,7 @@ async function Conteudo() {
             {conflitos.map((m) => (
               <li key={m.id}>
                 <Link
-                  href={`/gestao?dia=${m.dia}`}
+                  href={`/gestao?dia=${m.dia}&marcacao=${m.id}`}
                   className="group flex items-center justify-between gap-3 rounded border border-red-400/30 bg-bg/50 px-4 py-3 transition-[border-color,background-color,transform] hover:border-red-300 hover:bg-bg active:scale-[0.99]"
                 >
                   <span className="flex min-w-0 flex-col">
@@ -122,7 +124,7 @@ async function Conteudo() {
       <div className="mt-6 flex flex-col gap-5 lg:mt-8 lg:grid lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)] lg:items-start lg:gap-10">
         <HorarioHabitual key={JSON.stringify(s)} inicial={s} />
         <div className="flex flex-col gap-5">
-          <FolgasEFerias tipo="fechar" semanal={s} especiais={e} bloqueios={b} hoje={hoje} />
+          <FolgasEFerias tipo="fechar" semanal={s} especiais={e} bloqueios={b} hoje={hoje} marcacoes={futuras} />
           <FolgasEFerias tipo="abrir" semanal={s} especiais={e} bloqueios={b} hoje={hoje} />
         </div>
       </div>

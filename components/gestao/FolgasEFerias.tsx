@@ -25,14 +25,17 @@ export function FolgasEFerias({
   especiais,
   bloqueios,
   hoje,
+  marcacoes = [],
 }: {
   tipo: "fechar" | "abrir"; // cada um tem a sua caixa
   semanal: TurnoSemanal[];
   especiais: TurnoEspecial[];
   bloqueios: Bloqueio[];
   hoje: string;
+  marcacoes?: { id: string; inicio: string; fim: string; cliente_nome: string }[]; // marcações futuras (para avisar antes de fechar)
 }) {
   const [dias, setDias] = useState<string[]>([]);
+  const [confirmar, setConfirmar] = useState(false); // já viu o aviso das marcações e quer fechar na mesma
   const abrir = tipo === "abrir";
   const [soHoras, setSoHoras] = useState(false);
   const [mensagem, setMensagem] = useState("");
@@ -135,6 +138,7 @@ export function FolgasEFerias({
     const nova: Escolha = novoAbrir ? (novoSoHoras ? "abrirHoras" : "abrirDia") : novoSoHoras ? "fecharHoras" : "fecharDia";
     setSoHoras(novoSoHoras);
     setErro(null);
+    setConfirmar(false);
     // tira os dias que deixaram de fazer sentido
     const ficam = dias.filter((d) => serve(nova, d));
     setDias(ficam);
@@ -162,7 +166,24 @@ export function FolgasEFerias({
       })
     : [];
 
-  function guardar() {
+  // Marcações que ficam apanhadas por este fecho (dia inteiro ou só as horas escolhidas)
+  const apanhadas = abrir
+    ? []
+    : marcacoes.filter((m) => {
+        if (!dias.includes(diaEmLisboa(m.inicio))) return false;
+        if (!soHoras) return true;
+        const i = minutos(horaEmLisboa(m.inicio));
+        let f = minutos(horaEmLisboa(m.fim));
+        if (f <= i) f += 1440;
+        return i < minutos(ate) && f > minutos(de);
+      });
+
+  function guardar(naMesma = false) {
+    if (apanhadas.length && !naMesma) {
+      setConfirmar(true); // primeiro mostra o aviso
+      return;
+    }
+    setConfirmar(false);
     setErro(null);
     iniciar(async () => {
       let r = abrir
@@ -257,6 +278,7 @@ export function FolgasEFerias({
           min={escolha === "abrirHoras" && madrugada ? ontem : hoje}
           hoje={hoje}
           onMudar={(ds) => {
+            setConfirmar(false);
             // horas a mais: ao escolher o 1.º dia, as horas começam a seguir à última marcação dele
             if (escolha === "abrirHoras" && !dias.length && ds.length) horasAMaisDe(ds[0]);
             setDias(ds);
@@ -324,10 +346,49 @@ export function FolgasEFerias({
         )}
 
         {erro && <p className="text-sm text-red-400">{erro}</p>}
+
+        {/* Aviso antes de fechar: já há clientes marcados */}
+        {confirmar && apanhadas.length > 0 && (
+          <div role="alert" className="flex flex-col gap-3 rounded-lg border border-red-400/50 bg-red-400/10 p-4 motion-safe:animate-entrar">
+            <p className="text-sm font-bold text-red-200">
+              {apanhadas.length === 1 ? "Já tens 1 marcação" : `Já tens ${apanhadas.length} marcações`} {soHoras ? "nessas horas" : n > 1 ? "nesses dias" : "nesse dia"}:
+            </p>
+            <ul className="flex flex-col gap-1 text-sm text-texto-2">
+              {apanhadas.slice(0, 5).map((m) => (
+                <li key={m.id}>
+                  <span className="font-bold text-texto">
+                    {formatarDiaCurto(diaEmLisboa(m.inicio))} · {horaEmLisboa(m.inicio)}
+                  </span>{" "}
+                  · {m.cliente_nome}
+                </li>
+              ))}
+              {apanhadas.length > 5 && <li className="text-texto-3">e mais {apanhadas.length - 5}…</li>}
+            </ul>
+            <p className="text-xs text-texto-3">Se fechares na mesma, continuam marcadas e aparecem no aviso lá em cima para decidires o que fazer.</p>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setConfirmar(false)}
+                className="h-10 rounded-full border border-borda-forte text-[11px] font-bold tracking-[0.14em] text-texto-2 transition-[border-color,color,transform] hover:border-texto hover:text-texto active:scale-95"
+              >
+                NÃO FECHAR
+              </button>
+              <button
+                type="button"
+                onClick={() => guardar(true)}
+                className="h-10 rounded-full bg-red-400 text-[11px] font-bold tracking-[0.14em] text-tinta transition-[background-color,transform] hover:bg-red-300 active:scale-95"
+              >
+                FECHAR NA MESMA
+              </button>
+            </div>
+          </div>
+        )}
+
         <button
           type="button"
           disabled={!n || aGuardar}
-          onClick={guardar}
+          hidden={confirmar && apanhadas.length > 0}
+          onClick={() => guardar()}
           className={`${classesBotaoPrimario("pequeno")} disabled:pointer-events-none disabled:opacity-40`}
         >
           {aGuardar ? "A GUARDAR…" : !n ? "ESCOLHE OS DIAS" : `GUARDAR ${n} ${n === 1 ? "DIA" : "DIAS"}`}

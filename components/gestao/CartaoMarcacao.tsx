@@ -80,7 +80,7 @@ const botaoContorno =
 
 type Painel = null | "concluir" | "cancelar";
 
-export function CartaoMarcacao({ m, atraso = 0 }: { m: MarcacaoAgenda; atraso?: number }) {
+export function CartaoMarcacao({ m, atraso = 0, destaque = false }: { m: MarcacaoAgenda; atraso?: number; destaque?: boolean }) {
   const [painel, setPainel] = useState<Painel>(null);
   const [valor, setValor] = useState(String(m.valorCobrado ?? m.preco ?? ""));
   const [metodo, setMetodo] = useState<"mbway" | "dinheiro" | null>(m.metodo);
@@ -112,8 +112,9 @@ export function CartaoMarcacao({ m, atraso = 0 }: { m: MarcacaoAgenda; atraso?: 
 
   return (
     <li
+      id={`marcacao-${m.id}`}
       style={{ animationDelay: `${atraso}ms` }}
-      className={`rounded-lg border bg-superficie transition-[border-color,opacity] duration-300 motion-safe:animate-entrar hover:border-borda-forte lg:flex ${
+      className={`scroll-mt-24 rounded-lg border bg-superficie transition-[border-color,opacity,box-shadow] duration-500 ${destaque ? "ring-2 ring-red-300 ring-offset-4 ring-offset-bg" : ""} motion-safe:animate-entrar hover:border-borda-forte lg:flex ${
         m.agora ? "border-texto shadow-[0_0_0_1px_var(--color-texto)]" : "border-borda"
       } ${aGuardar ? "opacity-70" : ""}`}
     >
