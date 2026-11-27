@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useTransition } from "react";
+import { useMemo, useRef, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { IconeVisto } from "@/components/icones";
 import {
@@ -47,6 +47,8 @@ export function Agenda({ hoje, dia: diaPedido, grelha, folgas, feriados, marcaco
   const params = useSearchParams();
   const doEndereco = params.get("dia") ?? hoje;
   const dia = dataValida(doEndereco) && doEndereco.slice(0, 7) === mesCarregado ? doEndereco : diaPedido;
+
+  const toque = useRef<{ x: number; y: number } | null>(null); // para arrastar a semana no telemóvel
 
   function irPara(d: string) {
     const url = d === hoje ? "/gestao" : `/gestao?dia=${d}`;
@@ -125,7 +127,7 @@ export function Agenda({ hoje, dia: diaPedido, grelha, folgas, feriados, marcaco
                 onClick={() => irPara(hoje)}
                 className="shrink-0 rounded-full border border-borda-forte px-4 py-2 text-[11px] font-bold tracking-[0.16em] transition-[background-color,color,border-color,transform] duration-200 hover:border-texto hover:bg-texto hover:text-tinta active:scale-95 motion-safe:animate-entrar"
               >
-                HOJE
+                IR PARA HOJE
               </button>
             )}
           </div>
@@ -135,7 +137,20 @@ export function Agenda({ hoje, dia: diaPedido, grelha, folgas, feriados, marcaco
             <button type="button" onClick={() => irPara(adicionarDias(dia, -7))} aria-label="Semana anterior" className={`${botaoSeta} h-16 w-8 rounded`}>
               <Seta para="esq" />
             </button>
-            <ol className="grid flex-1 grid-cols-7 gap-1.5">
+            <ol
+              key={semana[0]}
+              className="grid flex-1 touch-pan-y grid-cols-7 gap-1.5 motion-safe:animate-entrar"
+              // arrastar para o lado: esquerda → semana seguinte, direita → semana anterior
+              onTouchStart={(e) => (toque.current = { x: e.touches[0].clientX, y: e.touches[0].clientY })}
+              onTouchEnd={(e) => {
+                const t = toque.current;
+                toque.current = null;
+                if (!t) return;
+                const dx = e.changedTouches[0].clientX - t.x;
+                const dy = e.changedTouches[0].clientY - t.y;
+                if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) irPara(adicionarDias(dia, dx < 0 ? 7 : -7));
+              }}
+            >
               {semana.map((d) => {
                 const r = resumo(d);
                 const sel = d === dia;
@@ -225,48 +240,24 @@ export function Agenda({ hoje, dia: diaPedido, grelha, folgas, feriados, marcaco
           </div>
         </section>
 
-        {/* ---------- Resumo do dia (não aparece em dias de folga sem marcações) ---------- */}
-        {!(diaDeFolga && ativas.length === 0) && (
-        <div key={`resumo-${dia}`} className="mt-5 flex flex-col gap-3 motion-safe:animate-entrar">
-          <div className="rounded-lg border border-borda bg-superficie p-4 lg:p-5">
-            <div className="flex items-end justify-between gap-4">
-              <span className="text-[9px] tracking-[0.2em] text-texto-3">FECHADAS</span>
-              <span className="flex items-center gap-1.5 text-xl font-extrabold tabular-nums font-stretch-125%">
-                {diaFechado && <IconeVisto className="size-4" />}
-                {fechadas.length}/{doDia.length}
-              </span>
-            </div>
-            {/* Barra de progresso do dia */}
-            <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-superficie-2">
-              <div
-                className="h-full rounded-full bg-texto transition-[width] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]"
-                style={{ width: `${progresso}%` }}
-              />
-            </div>
-            <p className="mt-2 text-xs text-texto-3">
-              {ativas.length === 0
-                ? canceladas
-                  ? "Todas as marcações foram canceladas."
-                  : "Sem marcações."
-                : diaFechado
-                  ? "Dia fechado. Bom trabalho!"
-                  : dia > hoje
-                    ? `${ativas.length} ${ativas.length === 1 ? "marcação" : "marcações"} por acontecer`
-                    : `${porFazer} por fechar`}
-            </p>
-          </div>
-
-        </div>
-        )}
       </aside>
 
       {/* ================= Marcações ================= */}
       <div className={`transition-opacity ${aNavegar ? "pointer-events-none opacity-50" : ""}`}>
         <h2 className="mt-8 flex items-center justify-between text-[10px] tracking-[0.24em] text-texto-3 lg:mt-0">
           MARCAÇÕES DO DIA
-          <span className="tabular-nums">{doDia.length}</span>
+          <span className="flex items-center gap-1.5 tabular-nums">
+            {diaFechado && <IconeVisto className="size-3 text-texto" />}
+            {doDia.length}
+          </span>
         </h2>
-        {contagem.length > 1 && (
+        {/* Barra fininha: quantas já estão resolvidas (concluídas, faltas ou canceladas) */}
+        {doDia.length > 0 && (
+          <div className="mt-2 h-1 overflow-hidden rounded-full bg-superficie-2" role="progressbar" aria-valuenow={progresso} aria-valuemin={0} aria-valuemax={100} aria-label="Marcações resolvidas">
+            <div className="h-full rounded-full bg-texto transition-[width] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]" style={{ width: `${progresso}%` }} />
+          </div>
+        )}
+        {contagem.length > 0 && (
           <p key={`contagem-${dia}`} className="mt-1.5 flex flex-wrap justify-end gap-x-2 text-xs text-texto-3 motion-safe:animate-entrar">
             {contagem.map((c, i) => (
               <span key={c}>

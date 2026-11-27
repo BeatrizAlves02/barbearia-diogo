@@ -232,7 +232,7 @@ export function FolgasEFerias({
   return (
     <Dobravel
       atraso={abrir ? 140 : 80}
-      titulo={abrir ? "ABRIR" : "FECHAR"}
+      titulo={abrir ? "ABRIR DIAS" : "FECHAR DIAS"}
       descricao={abrir ? "Trabalhar numa folga ou fazer horas a mais." : "Folgas, férias ou umas horas em que não trabalhas."}
     >
 

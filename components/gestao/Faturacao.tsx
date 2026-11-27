@@ -21,7 +21,7 @@ type Props = {
 const MESES_CURTOS = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
 const ROTULOS: Record<Vista, string> = { dia: "DIA", semana: "SEMANA", mes: "MÊS", ano: "ANO" };
 const ANTERIOR: Record<Vista, string> = { dia: "que no dia anterior", semana: "que na semana anterior", mes: "que no mês anterior", ano: "que no ano anterior" };
-const ESTE: Record<Vista, string> = { dia: "Hoje", semana: "Esta semana", mes: "Este mês", ano: "Este ano" };
+const ESTE: Record<Vista, string> = { dia: "Ir para hoje", semana: "Ir para esta semana", mes: "Ir para este mês", ano: "Ir para este ano" };
 
 function tituloDoPeriodo(vista: Vista, de: string, ate: string) {
   if (vista === "dia") return formatarDiaLongo(de);
