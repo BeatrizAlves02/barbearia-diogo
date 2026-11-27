@@ -3,7 +3,6 @@
 import { useMemo, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { IconeVisto } from "@/components/icones";
-import { formatarPreco } from "@/lib/formatar";
 import {
   adicionarDias,
   dataValida,
@@ -14,7 +13,7 @@ import {
   primeiroDoMes,
   segundaDaSemana,
 } from "@/lib/datas";
-import { CartaoMarcacao, IconeDinheiro, IconeMbway, type MarcacaoAgenda } from "./CartaoMarcacao";
+import { CartaoMarcacao, type MarcacaoAgenda } from "./CartaoMarcacao";
 
 type Props = {
   hoje: string;
@@ -91,11 +90,6 @@ export function Agenda({ hoje, dia: diaPedido, grelha, folgas, feriados, marcaco
     canceladas && `${canceladas} ${canceladas === 1 ? "cancelada" : "canceladas"}`,
     porFazer && `${porFazer} por fazer`,
   ].filter(Boolean) as string[];
-  const soma = (metodo?: string) =>
-    concluidas.filter((m) => !metodo || m.metodo === metodo).reduce((t, m) => t + (m.valorCobrado ?? 0), 0);
-  const faturado = soma();
-  const mbway = soma("mbway");
-  const dinheiro = soma("dinheiro");
   const progresso = doDia.length ? Math.round((fechadas.length / doDia.length) * 100) : 0;
   const diaFechado = resumo(dia).fechado;
   const diaDeFolga = diasDeFolga.has(dia);
@@ -236,17 +230,11 @@ export function Agenda({ hoje, dia: diaPedido, grelha, folgas, feriados, marcaco
         <div key={`resumo-${dia}`} className="mt-5 flex flex-col gap-3 motion-safe:animate-entrar">
           <div className="rounded-lg border border-borda bg-superficie p-4 lg:p-5">
             <div className="flex items-end justify-between gap-4">
-              <div className="flex flex-col gap-1">
-                <span className="text-[9px] tracking-[0.2em] text-texto-3">FATURADO</span>
-                <span className="text-3xl font-extrabold tabular-nums font-stretch-125% lg:text-4xl">{formatarPreco(faturado)}</span>
-              </div>
-              <div className="flex flex-col items-end gap-1 text-right">
-                <span className="text-[9px] tracking-[0.2em] text-texto-3">FECHADAS</span>
-                <span className="flex items-center gap-1.5 text-xl font-extrabold tabular-nums font-stretch-125%">
-                  {diaFechado && <IconeVisto className="size-4" />}
-                  {fechadas.length}/{doDia.length}
-                </span>
-              </div>
+              <span className="text-[9px] tracking-[0.2em] text-texto-3">FECHADAS</span>
+              <span className="flex items-center gap-1.5 text-xl font-extrabold tabular-nums font-stretch-125%">
+                {diaFechado && <IconeVisto className="size-4" />}
+                {fechadas.length}/{doDia.length}
+              </span>
             </div>
             {/* Barra de progresso do dia */}
             <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-superficie-2">
@@ -268,28 +256,6 @@ export function Agenda({ hoje, dia: diaPedido, grelha, folgas, feriados, marcaco
             </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            {[
-              { rotulo: "MB WAY", valor: mbway, Icone: IconeMbway },
-              { rotulo: "DINHEIRO", valor: dinheiro, Icone: IconeDinheiro },
-            ].map(({ rotulo, valor, Icone }) => (
-              <div key={rotulo} className="flex flex-col gap-3 rounded-lg border border-borda bg-superficie p-4 lg:p-5">
-                <span className="flex items-center gap-2 text-[10px] font-bold tracking-[0.2em] text-texto-2">
-                  <span className="flex size-7 items-center justify-center rounded-full border border-borda-forte">
-                    <Icone className="size-3.5" />
-                  </span>
-                  {rotulo}
-                </span>
-                <span className="text-2xl font-extrabold tabular-nums font-stretch-125%">{formatarPreco(valor)}</span>
-                <div className="h-1 overflow-hidden rounded-full bg-superficie-2">
-                  <div
-                    className="h-full rounded-full bg-texto-2 transition-[width] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]"
-                    style={{ width: `${faturado ? Math.round((valor / faturado) * 100) : 0}%` }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
         </div>
         )}
       </aside>

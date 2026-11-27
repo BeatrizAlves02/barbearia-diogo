@@ -8,6 +8,7 @@ import { adicionarDias, diaEmLisboa, formatarDiaCurto, horaEmLisboa } from "@/li
 import { acrescentarHoras, curta, diaInteiro, esticar, minutos, normalizar, paraHora, turnoDoDia, ULTIMA_MAX, ABRE_MIN, type Bloqueio, type TurnoEspecial, type TurnoSemanal } from "@/lib/horarios";
 import { feriado } from "@/lib/feriados";
 import { Alternador, SeletorData, SeletorHora } from "./ControlosHorario";
+import { Dobravel } from "./Dobravel";
 
 /*
   Quatro escolhas, sempre com a mesma lógica:
@@ -225,16 +226,15 @@ export function FolgasEFerias({
     }),
   ].sort((x, y) => x.data.localeCompare(y.data));
 
-  const rotuloHora = "w-9 text-[11px] font-bold tracking-[0.14em] text-texto-3";
+  // no telemóvel: sem "DAS"/"ÀS" (só um traço entre as horas) para caber tudo na mesma linha
+  const rotuloHora = "hidden shrink-0 text-[11px] font-bold tracking-[0.14em] text-texto-3 sm:inline sm:w-9";
 
   return (
-    <section style={{ animationDelay: "80ms" }} className="rounded-lg border border-borda bg-superficie motion-safe:animate-entrar">
-      <div className="flex flex-col gap-1 border-b border-borda p-5 lg:p-6">
-        <h2 className="text-sm font-extrabold tracking-[0.16em] font-stretch-125%">{abrir ? "ABRIR" : "FECHAR"}</h2>
-        <p className="text-sm text-texto-3">
-          {abrir ? "Trabalhar numa folga ou fazer horas a mais." : "Folgas, férias ou umas horas em que não trabalhas."}
-        </p>
-      </div>
+    <Dobravel
+      atraso={abrir ? 140 : 80}
+      titulo={abrir ? "ABRIR" : "FECHAR"}
+      descricao={abrir ? "Trabalhar numa folga ou fazer horas a mais." : "Folgas, férias ou umas horas em que não trabalhas."}
+    >
 
       <div className="flex flex-col gap-4 p-5 lg:p-6">
         <div className="flex flex-col gap-1.5">
@@ -268,10 +268,11 @@ export function FolgasEFerias({
         />
 
         {escolha === "fecharHoras" && (
-          <div className="flex flex-wrap items-center gap-2 motion-safe:animate-entrar">
+          <div className="flex items-center gap-1.5 motion-safe:animate-entrar sm:gap-2">
             <span className={rotuloHora}>DAS</span>
             <SeletorHora rotulo="Fechado das" valor={de} min={paraHora(minFechar)} max="23:30" onMudar={(h) => { setDe(h); if (minutos(ate) <= minutos(h)) setAte(paraHora(minutos(h) + 30)); }} />
-            <span className={`${rotuloHora} w-auto px-1`}>ÀS</span>
+            <span className={`${rotuloHora} sm:w-auto sm:px-1`}>ÀS</span>
+            <span className="text-texto-3 sm:hidden" aria-hidden="true">–</span>
             <SeletorHora rotulo="Fechado até às" valor={ate} min={paraHora(minutos(de) + 30)} max="24:00" onMudar={setAte} />
           </div>
         )}
@@ -291,10 +292,11 @@ export function FolgasEFerias({
 
         {escolha === "abrirHoras" && (
           <div className="flex flex-col gap-1.5 motion-safe:animate-entrar">
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2">
               <span className={rotuloHora}>DAS</span>
               <SeletorHora rotulo="Abre às" valor={abre} min={paraHora(minAbrir)} max={paraHora(ULTIMA_MAX)} onMudar={(h) => { setAbre(h); if (minutos(fecha) < minutos(h)) setFecha(h); }} />
-              <span className={`${rotuloHora} w-auto px-1`}>ÀS</span>
+              <span className={`${rotuloHora} sm:w-auto sm:px-1`}>ÀS</span>
+            <span className="text-texto-3 sm:hidden" aria-hidden="true">–</span>
               <SeletorHora rotulo="Última marcação às" valor={fecha} min={abre} max={paraHora(ULTIMA_MAX)} onMudar={setFecha} />
             </div>
           </div>
@@ -339,7 +341,7 @@ export function FolgasEFerias({
           ))}
         </ul>
       )}
-    </section>
+    </Dobravel>
   );
 }
 

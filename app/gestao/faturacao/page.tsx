@@ -52,7 +52,7 @@ async function Conteudo({ searchParams }: Props) {
   if (!barbeiro) redirect("/gestao");
 
   const hoje = hojeEmLisboa();
-  const vista: Vista = (VISTAS as string[]).includes(v) ? (v as Vista) : "mes";
+  const vista: Vista = (VISTAS as string[]).includes(v) ? (v as Vista) : "dia"; // abre sempre no dia de hoje
   const data = dataValida(d) ? d : hoje;
   const atual = periodo(vista, data);
   const anterior = periodo(vista, deslocar(vista, data, -1));

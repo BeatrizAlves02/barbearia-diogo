@@ -70,7 +70,7 @@ export function SeletorHora({
   }
 
   const botao =
-    "flex size-9 shrink-0 items-center justify-center rounded text-lg leading-none text-texto-2 transition-[background-color,color,transform] duration-150 hover:bg-superficie-2 hover:text-texto active:scale-90 disabled:pointer-events-none disabled:opacity-25";
+    "flex size-7 shrink-0 items-center justify-center rounded text-lg leading-none text-texto-2 min-[380px]:size-8 sm:size-9 transition-[background-color,color,transform] duration-150 hover:bg-superficie-2 hover:text-texto active:scale-90 disabled:pointer-events-none disabled:opacity-25";
   return (
     <div
       role="group"
@@ -109,7 +109,7 @@ export function SeletorHora({
             setTexto(null);
           }
         }}
-        className="w-14 bg-transparent text-center text-[15px] font-bold tabular-nums outline-none selection:bg-texto selection:text-tinta"
+        className="w-11 bg-transparent text-center text-sm min-[380px]:w-12 sm:w-14 sm:text-[15px] font-bold tabular-nums outline-none selection:bg-texto selection:text-tinta"
       />
       <button type="button" aria-label={`${rotulo}: mais meia hora`} disabled={v >= minutos(max)} onClick={() => passo(30)} className={botao}>
         +

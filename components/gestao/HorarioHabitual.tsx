@@ -5,6 +5,7 @@ import { guardarHorarioHabitual } from "@/app/gestao/horario/actions";
 import { classesBotaoPrimario } from "@/components/BotaoPrimario";
 import { IconeVisto } from "@/components/icones";
 import { curta, esticar, minutos, normalizar, paraHora, ULTIMA_MAX, ABRE_MIN, type TurnoSemanal } from "@/lib/horarios";
+import { Dobravel } from "./Dobravel";
 import { Interruptor, SeletorHora } from "./ControlosHorario";
 
 type Linha = { dia_semana: number; aberto: boolean; abre: string; fecha: string; pausa: boolean; pausa_inicio: string; pausa_fim: string };
@@ -80,15 +81,16 @@ export function HorarioHabitual({ inicial }: { inicial: TurnoSemanal[] }) {
   }
 
   return (
-    <section className="rounded-lg border border-borda bg-superficie motion-safe:animate-entrar">
-      <div className="flex flex-col gap-1 border-b border-borda p-5 lg:p-6">
-        <h2 className="text-sm font-extrabold tracking-[0.16em] font-stretch-125%">HORÁRIO HABITUAL</h2>
-        <p className="text-sm text-texto-3">
+    <Dobravel
+      titulo="HORÁRIO HABITUAL"
+      descricao={
+        <>
           Hora de abrir – hora da última marcação.
           <br />
           <strong className="font-bold text-texto-2">Vale para todas as semanas.</strong>
-        </p>
-      </div>
+        </>
+      }
+    >
 
       <ul className="divide-y divide-borda">
         {linhas.map((l) => (
@@ -177,6 +179,6 @@ export function HorarioHabitual({ inicial }: { inicial: TurnoSemanal[] }) {
           </button>
         </div>
       </div>
-    </section>
+    </Dobravel>
   );
 }
