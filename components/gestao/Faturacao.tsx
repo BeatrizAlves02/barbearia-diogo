@@ -51,62 +51,64 @@ export function Faturacao({ vista, de, ate, hoje, anteriorData, seguinteData, re
   const podeAvancar = seguinteData <= hoje; // não faz sentido ver faturação do futuro
   const { total, anterior } = resumo;
   const diferenca = anterior ? Math.round(((total - anterior) / anterior) * 100) : null;
+  // por baixo do dia: "Hoje" ou "Ontem"
+  const relativo = vista === "dia" ? (de === hoje ? "Hoje" : de === adicionarDias(hoje, -1) ? "Ontem" : null) : null;
 
   return (
     <div className="mt-6 flex flex-col gap-6 lg:mt-8">
-      {/* ---------- Período ---------- */}
-      <div className="flex flex-col gap-4 motion-safe:animate-entrar lg:flex-row lg:items-end lg:justify-between">
+      {/* ---------- Período (igual em todos os ecrãs: título → tipo de período → setas) ---------- */}
+      <div className="flex flex-col gap-4 motion-safe:animate-entrar">
         <div>
           <span className="text-[10px] tracking-[0.22em] text-texto-3">FATURAÇÃO</span>
           <h1 key={de + vista} className="mt-1 text-3xl leading-none font-extrabold uppercase font-stretch-125% motion-safe:animate-entrar lg:text-5xl">
             {tituloDoPeriodo(vista, de, ate)}
           </h1>
+          {relativo && <p key={`r${de}`} className="mt-1.5 text-sm text-texto-3 motion-safe:animate-entrar">{relativo}</p>}
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="flex flex-1 gap-1 rounded-full border border-borda p-1 sm:flex-none">
-            {(Object.keys(ROTULOS) as Vista[]).map((v) => (
-              <button
-                key={v}
-                type="button"
-                aria-pressed={v === vista}
-                onClick={() => ir(v, contemHoje ? hoje : de)}
-                className={`flex h-9 flex-1 items-center justify-center rounded-full px-3 text-[11px] font-bold tracking-[0.14em] transition-[background-color,color,transform] duration-200 active:scale-95 sm:px-4 ${
-                  v === vista ? "bg-texto text-tinta" : "text-texto-2 hover:bg-superficie-2 hover:text-texto"
-                }`}
-              >
-                {ROTULOS[v]}
-              </button>
-            ))}
-          </div>
-          <div className="flex items-center gap-1">
+        <div className="flex w-full max-w-md gap-1 rounded-full border border-borda p-1">
+          {(Object.keys(ROTULOS) as Vista[]).map((v) => (
             <button
+              key={v}
               type="button"
-              aria-label="Período anterior"
-              onClick={() => ir(vista, anteriorData)}
-              className="flex size-10 items-center justify-center rounded-full border border-borda text-texto-2 transition-[border-color,color,transform] hover:border-texto hover:text-texto active:scale-90"
+              aria-pressed={v === vista}
+              onClick={() => ir(v, contemHoje ? hoje : de)}
+              className={`flex h-9 flex-1 items-center justify-center rounded-full text-[11px] font-bold tracking-[0.14em] transition-[background-color,color,transform] duration-200 active:scale-95 ${
+                v === vista ? "bg-texto text-tinta" : "text-texto-2 hover:bg-superficie-2 hover:text-texto"
+              }`}
             >
-              <Seta para="esq" />
+              {ROTULOS[v]}
             </button>
-            <button
-              type="button"
-              aria-label="Período seguinte"
-              disabled={!podeAvancar}
-              onClick={() => ir(vista, seguinteData)}
-              className="flex size-10 items-center justify-center rounded-full border border-borda text-texto-2 transition-[border-color,color,transform] hover:border-texto hover:text-texto active:scale-90 disabled:pointer-events-none disabled:opacity-25"
-            >
-              <Seta para="dir" />
-            </button>
-            {!contemHoje && (
-              <button
-                type="button"
-                onClick={() => ir(vista, hoje)}
-                className="h-10 rounded-full border border-borda px-4 text-[11px] font-bold tracking-[0.14em] text-texto-2 transition-[border-color,color,transform] hover:border-texto hover:text-texto active:scale-95 motion-safe:animate-entrar"
-              >
-                {ESTE[vista].toUpperCase()}
-              </button>
-            )}
-          </div>
+          ))}
+        </div>
+
+        {/* Andar entre períodos: sempre no mesmo sítio e com o mesmo tamanho (nada salta) */}
+        <div className="grid w-full max-w-md grid-cols-[auto_1fr_auto] items-center gap-1 rounded-full border border-borda p-1">
+          <button
+            type="button"
+            aria-label="Período anterior"
+            onClick={() => ir(vista, anteriorData)}
+            className="flex size-9 items-center justify-center rounded-full text-texto-2 transition-[background-color,color,transform] hover:bg-superficie-2 hover:text-texto active:scale-90"
+          >
+            <Seta para="esq" />
+          </button>
+          <button
+            type="button"
+            disabled={contemHoje}
+            onClick={() => ir(vista, hoje)}
+            className="h-9 truncate rounded-full px-2 text-[11px] font-bold tracking-[0.14em] text-texto transition-[background-color,color,opacity,transform] hover:bg-superficie-2 active:scale-95 disabled:pointer-events-none disabled:opacity-25"
+          >
+            {ESTE[vista].toUpperCase()}
+          </button>
+          <button
+            type="button"
+            aria-label="Período seguinte"
+            disabled={!podeAvancar}
+            onClick={() => ir(vista, seguinteData)}
+            className="flex size-9 items-center justify-center rounded-full text-texto-2 transition-[background-color,color,opacity,transform] hover:bg-superficie-2 hover:text-texto active:scale-90 disabled:pointer-events-none disabled:opacity-25"
+          >
+            <Seta para="dir" />
+          </button>
         </div>
       </div>
 
@@ -169,10 +171,9 @@ export function Faturacao({ vista, de, ate, hoje, anteriorData, seguinteData, re
             </div>
           </section>
 
-          <div key={`k${de}${vista}`} className="grid grid-cols-2 gap-3 motion-safe:animate-entrar">
+          <div key={`k${de}${vista}`} className="grid grid-cols-3 gap-3 motion-safe:animate-entrar">
             {[
               { rotulo: "CONCLUÍDAS", valor: String(resumo.concluidas) },
-              { rotulo: "MÉDIA POR CLIENTE", valor: formatarPreco(Math.round(resumo.media * 100) / 100) },
               { rotulo: "FALTARAM", valor: String(resumo.faltas) },
               { rotulo: "CANCELADAS", valor: String(resumo.canceladas) },
             ].map((k) => (

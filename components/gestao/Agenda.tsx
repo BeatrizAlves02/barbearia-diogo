@@ -107,7 +107,7 @@ export function Agenda({ hoje, dia: diaPedido, grelha, folgas, feriados, marcaco
           <div className="flex items-center justify-between gap-3">
             <div className="flex flex-col gap-1">
               <span className="flex items-center gap-2 text-[10px] tracking-[0.24em] text-texto-3">
-                {dia === hoje ? "HOJE" : "AGENDA"}
+                AGENDA
                 {diaDeFolga && (
                   <span className="rounded-full border border-borda-forte px-2 py-0.5 text-[9px] font-bold tracking-[0.16em] text-texto-2">
                     FOLGA
@@ -120,6 +120,12 @@ export function Agenda({ hoje, dia: diaPedido, grelha, folgas, feriados, marcaco
               <h1 key={dia} className="text-2xl font-extrabold uppercase leading-none font-stretch-125% motion-safe:animate-entrar lg:text-4xl">
                 {formatarDiaLongo(dia)}
               </h1>
+              {/* "Hoje", "Ontem" ou "Amanhã", por baixo do dia */}
+              {[adicionarDias(hoje, -1), hoje, adicionarDias(hoje, 1)].includes(dia) && (
+                <p key={`r${dia}`} className="text-sm text-texto-3 motion-safe:animate-entrar">
+                  {dia === hoje ? "Hoje" : dia < hoje ? "Ontem" : "Amanhã"}
+                </p>
+              )}
             </div>
             {dia !== hoje && (
               <button
